@@ -1,0 +1,18 @@
+خطوات رفع المشروع على GitHub (من حساب جديد)
+
+1) لو معندكش حساب: ادخل github.com واعمل حساب مجاني.
+2) اضغط علامة + فوق → New repository.
+   - Repository name: prayer-app
+   - اختار Public أو Private
+   - اضغط Create repository.
+3) في الصفحة اللي بتفتح اضغط "uploading an existing file" (أو Add file → Upload files).
+   - اسحب الملفات دي: index.html ومجلد adhan كامل وpackage.json وcapacitor.config.json وPRIVACY.md
+   - اضغط Commit changes.
+4) ملف البناء لازم يتعمل بالاسم ده بالظبط: .github/workflows/build.yml
+   - اضغط Add file → Create new file
+   - اكتب في خانة الاسم: .github/workflows/build.yml (الـ / بتعمل المجلدات لوحدها)
+   - الصق محتوى الملف build.yml واضغط Commit changes.
+   - مهم: الأفضل تعمل الخطوة دي من الكمبيوتر (أو من المتصفح في وضع Desktop site).
+5) اضغط تبويب Actions → Build APK → Run workflow.
+   - استنى لحد ما تخلص (علامة خضرا).
+   - ادخل على الـ run واضغط على app-debug تحت Artifacts عشان تنزل الـ APK.
