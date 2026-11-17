@@ -248,16 +248,38 @@ jobs:
 
           sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/AdhanNotifierPlugin.java"
 
-          # Register the plugin, keep the adhan playing without a tap
-          sed -i 's/super.onCreate(savedInstanceState);/registerPlugin(AdhanNotifierPlugin.class); super.onCreate(savedInstanceState); getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);/' "$MAIN"
+          # Write MainActivity ourselves: registers the plugin before the bridge starts
+          cat > "$MAIN" <<'JAVA'
+          package __PKG__;
 
-          # Permissions and the service entry in the manifest
-          MAN=android/app/src/main/AndroidManifest.xml
-          sed -i 's#<application#<uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><application#' "$MAN"
-          sed -i 's#</application>#<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown" /></service></application>#' "$MAN"
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
 
-          grep -n "registerPlugin" "$MAIN"
-          grep -n "AdhanService" "$MAN"
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(AdhanNotifierPlugin.class);
+                  super.onCreate(savedInstanceState);
+                  getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+              }
+          }
+          JAVA
+          sed -i "s/__PKG__/$PKG/g" "$MAIN"
+
+          # Permissions and the service entry in the manifest (edited with Python, fails loudly if it can't)
+          python3 - <<'PY'
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          perms = '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" />'
+          svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown" /></service>'
+          if "AdhanService" not in s:
+              assert "<application" in s and "</application>" in s, "manifest has no application tag"
+              s = s.replace("<application", perms + "<application", 1)
+              s = s.replace("</application>", svc + "</application>", 1)
+              open(p, "w", encoding="utf-8").write(s)
+          print("AdhanService in manifest:", "AdhanService" in s)
+          PY
+          echo "Native setup done"
 
       - name: Copy adhan sounds for notifications
         run: |
