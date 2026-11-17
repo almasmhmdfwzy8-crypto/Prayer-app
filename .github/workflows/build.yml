@@ -95,6 +95,8 @@ jobs:
           package __PKG__;
 
           import android.app.Notification;
+          import android.app.PendingIntent;
+          import android.graphics.BitmapFactory;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
           import android.app.Service;
@@ -180,15 +182,56 @@ jobs:
                   return "أذان " + bestName + " بعد " + left;
               }
 
+              private String bigText() {
+                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("times", "");
+                  if (raw == null || raw.isEmpty()) return "افتح التطبيق عشان المواقيت تتحدّث";
+                  long now = System.currentTimeMillis();
+                  java.util.TreeMap<Long, String> upcoming = new java.util.TreeMap<>();
+                  for (String item : raw.split(";")) {
+                      int bar = item.indexOf('|');
+                      if (bar < 0) continue;
+                      try {
+                          long at = Long.parseLong(item.substring(0, bar));
+                          if (at > now && !upcoming.containsKey(at)) upcoming.put(at, item.substring(bar + 1));
+                      } catch (NumberFormatException e) {
+                      }
+                  }
+                  StringBuilder sb = new StringBuilder();
+                  java.util.Calendar cal = java.util.Calendar.getInstance();
+                  int shown = 0;
+                  for (java.util.Map.Entry<Long, String> e : upcoming.entrySet()) {
+                      if (shown == 5) break;
+                      cal.setTimeInMillis(e.getKey());
+                      String hm = String.format(java.util.Locale.US, "%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
+                      if (sb.length() > 0) sb.append("\n");
+                      sb.append(e.getValue()).append("   ").append(hm);
+                      shown++;
+                  }
+                  return sb.length() == 0 ? "افتح التطبيق عشان المواقيت تتحدّث" : sb.toString();
+              }
+
               private Notification build(String text) {
-                  return new NotificationCompat.Builder(this, CH)
+                  NotificationCompat.Builder b = new NotificationCompat.Builder(this, CH)
                           .setSmallIcon(R.drawable.ic_stat_prayer)
+                          .setColor(0xFFF6C945)
+                          .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_bg_art))
                           .setContentTitle("ميقات")
+                          .setSubText("الأذان القادم")
                           .setContentText(text)
+                          .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText()))
                           .setOngoing(true)
                           .setOnlyAlertOnce(true)
-                          .setPriority(NotificationCompat.PRIORITY_LOW)
-                          .build();
+                          .setShowWhen(false)
+                          .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                          .setPriority(NotificationCompat.PRIORITY_LOW);
+                  Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                  if (launch != null) {
+                      launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                      int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                      if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
+                      b.setContentIntent(PendingIntent.getActivity(this, 0, launch, flags));
+                  }
+                  return b.build();
               }
           }
           JAVA
@@ -246,7 +289,215 @@ jobs:
           }
           JAVA
 
-          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/AdhanNotifierPlugin.java"
+          cat > "$DIR/FloatPlugin.java" <<'JAVA'
+          package __PKG__;
+
+          import android.app.AlarmManager;
+          import android.app.PendingIntent;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.provider.Settings;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+
+          @CapacitorPlugin(name = "FloatOverlay")
+          public class FloatPlugin extends Plugin {
+
+              @PluginMethod
+              public void can(PluginCall call) {
+                  JSObject r = new JSObject();
+                  boolean ok = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(getContext());
+                  r.put("granted", ok);
+                  call.resolve(r);
+              }
+
+              @PluginMethod
+              public void request(PluginCall call) {
+                  Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getContext().getPackageName()));
+                  i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                  getContext().startActivity(i);
+                  call.resolve();
+              }
+
+              @PluginMethod
+              public void set(PluginCall call) {
+                  boolean enabled = call.getBoolean("enabled", false);
+                  int everyMin = call.getInt("everyMin", 60);
+                  String texts = call.getString("texts", "[]");
+                  Context ctx = getContext();
+                  ctx.getSharedPreferences("float", Context.MODE_PRIVATE).edit().putString("texts", texts).putBoolean("enabled", enabled).putInt("everyMin", everyMin).apply();
+                  AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                  Intent i = new Intent(ctx, FloatReceiver.class);
+                  PendingIntent pi = PendingIntent.getBroadcast(ctx, 4401, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  am.cancel(pi);
+                  boolean allowed = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(ctx);
+                  if (enabled && allowed) {
+                      long interval = everyMin * 60000L;
+                      am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + interval, interval, pi);
+                  }
+                  call.resolve();
+              }
+          }
+          JAVA
+
+          cat > "$DIR/FloatReceiver.java" <<'JAVA'
+          package __PKG__;
+
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.graphics.PixelFormat;
+          import android.graphics.drawable.GradientDrawable;
+          import android.os.Build;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.provider.Settings;
+          import android.util.TypedValue;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.WindowManager;
+          import android.widget.FrameLayout;
+          import android.widget.ImageView;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import org.json.JSONArray;
+          import java.util.Random;
+
+          public class FloatReceiver extends BroadcastReceiver {
+
+              @Override
+              public void onReceive(Context ctx, Intent intent) {
+                  if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(ctx)) return;
+                  String text = "سبحان الله وبحمده";
+                  try {
+                      String raw = ctx.getSharedPreferences("float", Context.MODE_PRIVATE).getString("texts", "[]");
+                      JSONArray arr = new JSONArray(raw);
+                      if (arr.length() > 0) text = arr.getString(new Random().nextInt(arr.length()));
+                  } catch (Exception e) {
+                      // keep the default text
+                  }
+                  show(ctx, text);
+              }
+
+              private int dp(Context ctx, int v) {
+                  return (int) (v * ctx.getResources().getDisplayMetrics().density + 0.5f);
+              }
+
+              private void show(final Context ctx, String text) {
+                  final WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+
+                  LinearLayout box = new LinearLayout(ctx);
+                  box.setOrientation(LinearLayout.VERTICAL);
+                  box.setPadding(dp(ctx, 18), dp(ctx, 14), dp(ctx, 18), dp(ctx, 16));
+                  GradientDrawable bg = new GradientDrawable();
+                  bg.setColor(Color.parseColor("#F20B2550"));
+                  bg.setCornerRadius(dp(ctx, 22));
+                  bg.setStroke(dp(ctx, 2), Color.parseColor("#F6C945"));
+                  box.setBackground(bg);
+
+                  LinearLayout head = new LinearLayout(ctx);
+                  head.setOrientation(LinearLayout.HORIZONTAL);
+                  head.setGravity(Gravity.CENTER_VERTICAL);
+                  ImageView icon = new ImageView(ctx);
+                  icon.setImageResource(R.mipmap.ic_launcher);
+                  head.addView(icon, new LinearLayout.LayoutParams(dp(ctx, 36), dp(ctx, 36)));
+                  TextView title = new TextView(ctx);
+                  title.setText("ميقات");
+                  title.setTextColor(Color.parseColor("#F6C945"));
+                  title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+                  title.setPadding(dp(ctx, 10), 0, 0, 0);
+                  head.addView(title);
+                  box.addView(head);
+
+                  TextView body = new TextView(ctx);
+                  body.setText(text);
+                  body.setTextColor(Color.WHITE);
+                  body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+                  body.setGravity(Gravity.CENTER);
+                  body.setLineSpacing(dp(ctx, 3), 1f);
+                  body.setPadding(0, dp(ctx, 10), 0, 0);
+                  box.addView(body);
+
+                  final FrameLayout root = new FrameLayout(ctx);
+                  root.setPadding(dp(ctx, 16), 0, dp(ctx, 16), 0);
+                  root.addView(box, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+
+                  int type = Build.VERSION.SDK_INT >= 26 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
+                  WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                          WindowManager.LayoutParams.MATCH_PARENT,
+                          WindowManager.LayoutParams.WRAP_CONTENT,
+                          type,
+                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                          PixelFormat.TRANSLUCENT);
+                  lp.gravity = Gravity.TOP;
+                  lp.y = dp(ctx, 48);
+
+                  final Handler handler = new Handler(Looper.getMainLooper());
+                  final Runnable close = new Runnable() {
+                      @Override
+                      public void run() {
+                          try { wm.removeView(root); } catch (Exception e) { }
+                      }
+                  };
+                  root.setOnClickListener(new View.OnClickListener() {
+                      @Override
+                      public void onClick(View v) {
+                          handler.removeCallbacks(close);
+                          close.run();
+                          Intent open = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
+                          if (open != null) {
+                              open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                              ctx.startActivity(open);
+                          }
+                      }
+                  });
+                  try {
+                      wm.addView(root, lp);
+                      handler.postDelayed(close, 12000);
+                  } catch (Exception e) {
+                      // overlay permission missing: nothing to show
+                  }
+              }
+          }
+          JAVA
+
+          cat > "$DIR/BootReceiver.java" <<'JAVA'
+          package __PKG__;
+
+          import android.app.AlarmManager;
+          import android.app.PendingIntent;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.os.Build;
+          import android.provider.Settings;
+
+          public class BootReceiver extends BroadcastReceiver {
+
+              @Override
+              public void onReceive(Context ctx, Intent intent) {
+                  String action = intent.getAction();
+                  if (!"android.intent.action.BOOT_COMPLETED".equals(action)) return;
+                  SharedPreferences sp = ctx.getSharedPreferences("float", Context.MODE_PRIVATE);
+                  if (!sp.getBoolean("enabled", false)) return;
+                  if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(ctx)) return;
+                  int everyMin = sp.getInt("everyMin", 60);
+                  long interval = everyMin * 60000L;
+                  AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                  PendingIntent pi = PendingIntent.getBroadcast(ctx, 4401, new Intent(ctx, FloatReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + interval, interval, pi);
+              }
+          }
+          JAVA
+
+          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
 
           # Write MainActivity ourselves: registers the plugin before the bridge starts
           cat > "$MAIN" <<'JAVA'
@@ -259,6 +510,7 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(AdhanNotifierPlugin.class);
+                  registerPlugin(FloatPlugin.class);
                   super.onCreate(savedInstanceState);
                   getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
               }
@@ -270,12 +522,13 @@ jobs:
           python3 - <<'PY'
           p = "android/app/src/main/AndroidManifest.xml"
           s = open(p, encoding="utf-8").read()
-          perms = '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" />'
+          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />'
           svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown" /></service>'
+          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter></receiver>'
           if "AdhanService" not in s:
               assert "<application" in s and "</application>" in s, "manifest has no application tag"
               s = s.replace("<application", perms + "<application", 1)
-              s = s.replace("</application>", svc + "</application>", 1)
+              s = s.replace("</application>", svc + rcv + "</application>", 1)
               open(p, "w", encoding="utf-8").write(s)
           print("AdhanService in manifest:", "AdhanService" in s)
           PY
