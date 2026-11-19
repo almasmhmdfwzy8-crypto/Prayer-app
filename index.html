@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ميقات - مواقيت الصلاة والأذكار</title>
+<title>زاد المؤمن - مواقيت الصلاة والأذكار</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700;800&display=swap">
 <style>
 /* ---------- Themes ---------- */
@@ -498,7 +498,7 @@ body.sub .float { margin-top: -16px; }
 .trk.upcoming { opacity: 0.55; }
 /* Calmer colours after Maghrib (switches on automatically) */
 :root[data-night="1"] {
-  --accent: #6cc9a0;
+  --accent: #d4a24c;
   --bg: #1d1a16; --surface: #27231e; --surface-2: #302b25;
   --ink: #efe6d2; --muted: #b3a890; --line: #443d33;
   --shadow: 0 10px 28px rgb(0 0 0 / 0.35);
@@ -651,6 +651,10 @@ body.sub .adhan-bar { display: none; }
 .occ-modal[hidden] { display: none; }
 .occ-sheet { background: var(--surface); color: var(--ink); border-radius: 18px; padding: 18px; width: 100%; max-width: 460px; max-height: 82vh; overflow: auto; box-shadow: var(--shadow); }
 .occ-sheet p { line-height: 1.9; margin: 8px 0; }
+.occ-sheet ul { line-height: 1.9; padding-inline-start: 20px; margin: 6px 0; }
+.occ-sheet li { margin: 4px 0; }
+.occ-type { font-weight: 800; color: var(--accent); }
+.occ-sub { font-weight: 800; margin-top: 12px; }
 .city-wrap { display: inline-flex; align-items: center; gap: 6px; background: rgb(255 255 255 / 0.16); border: 1px solid rgb(255 255 255 / 0.3); border-radius: 999px; padding: 0 12px 0 10px; max-width: 60%; color: #fff; }
 .city-wrap svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .city-wrap .city-pill { background: none; border: none; padding: 8px 2px; max-width: 100%; color: #fff; font-weight: 700; }
@@ -711,7 +715,7 @@ body.sub .adhan-bar { display: none; }
         <circle cx="38" cy="12" r="2.5" fill="#f7d98a"/>
         <circle cx="42" cy="22" r="1.6" fill="#f7d98a"/>
       </svg>
-      <h1 id="pageTitle">ميقات</h1>
+      <h1 id="pageTitle">زاد المؤمن</h1>
     </div>
     <label class="city-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><select class="city-pill" id="city" aria-label="اختر المدينة"></select></label>
   </div>
@@ -799,7 +803,7 @@ body.sub .adhan-bar { display: none; }
     <button class="sg-btn" data-sg-open="theme" type="button"><span class="sg-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="8.5" cy="10" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="15.5" cy="10" r="1"/></svg></span><span>شكل التطبيق</span><span class="sg-chev" aria-hidden="true">‹</span></button>
     <button class="sg-btn" data-sg-open="prayer" type="button"><span class="sg-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg></span><span>المواقيت والمدينة</span><span class="sg-chev" aria-hidden="true">‹</span></button>
     <button class="sg-btn" data-sg-open="stats" type="button"><span class="sg-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg></span><span>تقويم إنجازاتي</span><span class="sg-chev" aria-hidden="true">‹</span></button>
-    <button class="sg-btn" data-sg-open="general" type="button"><span class="sg-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg></span><span>نسخ احتياطي وورد القرآن</span><span class="sg-chev" aria-hidden="true">‹</span></button>
+    <button class="sg-btn" data-sg-open="general" type="button"><span class="sg-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg></span><span>نسخ احتياطي</span><span class="sg-chev" aria-hidden="true">‹</span></button>
   </nav>
   <section class="card" data-sg="adhan">
     <h2 class="h">الأذان</h2>
@@ -852,13 +856,6 @@ body.sub .adhan-bar { display: none; }
 
   <section class="card" data-sg="alerts">
     <h2 class="h">الخلفية والإشعار الدائم</h2>
-    <div class="row" style="margin-bottom:12px">
-      <span class="lbl">إشعار دائم بالمواقيت</span>
-      <label class="switch">
-        <input type="checkbox" id="persistOn" aria-label="إشعار دائم بالمواقيت">
-        <span></span>
-      </label>
-    </div>
     <button class="btn ghost block" id="openBattery" type="button">إعدادات البطارية (عشان الأذان يشتغل والتطبيق مقفول)</button>
     <button class="btn ghost block" id="openAppSet" type="button" style="margin-top:8px">إعدادات التطبيق (الإشعارات والصلاحيات)</button>
     <p class="muted" style="margin-top:10px">عشان الأذان والإشعارات يوصلوا والتطبيق مقفول، اسمح للتطبيق يشتغل في الخلفية من إعدادات الهاتف. كل هاتف له اسم مختلف للخيار ده، ابحث عن "التشغيل التلقائي" أو "الخلفية" أو "تحسين البطارية"، وخلّيه "بدون قيود" أو "مسموح".</p>
@@ -1081,7 +1078,7 @@ body.sub .adhan-bar { display: none; }
 
   <section class="card" data-sg="general">
     <h2 class="h">نسخ احتياطي</h2>
-    <p class="muted" style="margin-bottom:10px">اضغط تصدير عشان تنسخ كل بياناتك (الأذكار والإحصائيات والورد والإعدادات). ولو غيرت الموبايل، الصق النص هنا واضغط استيراد.</p>
+    <p class="muted" style="margin-bottom:10px">اضغط تصدير عشان تنسخ كل بياناتك (الأذكار والإحصائيات والإعدادات). ولو غيرت الموبايل، الصق النص هنا واضغط استيراد.</p>
     <textarea class="backup" id="backupText" aria-label="نص النسخ الاحتياطي" dir="ltr"></textarea>
     <div class="row" style="margin-top:10px">
       <button class="btn" id="backupExport" type="button">تصدير ونسخ</button>
@@ -1111,19 +1108,6 @@ body.sub .adhan-bar { display: none; }
     <div class="day-detail" id="dayDetail" hidden></div>
   </section>
 
-  <section class="card" data-sg="general">
-    <h2 class="h">ورد القرآن</h2>
-    <div class="row" style="margin-bottom:10px">
-      <span class="lbl">الصفحة الحالية</span>
-      <input class="field" type="number" min="0" max="604" id="qPage" aria-label="الصفحة الحالية">
-    </div>
-    <div class="row" style="margin-bottom:10px">
-      <span class="lbl">ورد اليوم (صفحات)</span>
-      <input class="field" type="number" min="1" max="100" id="qGoal" aria-label="عدد صفحات الورد اليومي">
-    </div>
-    <button class="btn block" id="qLog" type="button">سجّلت ورد اليوم</button>
-    <p class="muted" id="qInfo" style="margin-top:10px"></p>
-  </section>
 
   <footer data-sg="prayer">المواقيت محسوبة فلكياً بزوايا الشمس المستخدمة في الحسابات المصرية الشائعة (الفجر 19.5°، والعشاء 17.5°). للمواقيت الرسمية راجع الجهات المختصة.</footer>
   <div class="credit"><small>تطوير وتوثيق</small><span>عَمْرو مَجْدِي مُحَمَّد</span></div>
@@ -1159,7 +1143,7 @@ body.sub .adhan-bar { display: none; }
 <!-- ============ First-run welcome ============ -->
 <div class="welcome" id="welcome" role="dialog" aria-modal="true" aria-label="أهلاً بيك" hidden>
   <section class="card">
-    <h2 class="h">أهلاً بيك في ميقات</h2>
+    <h2 class="h">أهلاً بيك في زاد المؤمن</h2>
     <ol>
       <li>اختار مدينتك من الصفحة الرئيسية، أو من الإعدادات بزرار الموقع.</li>
       <li>فعّل الإشعارات من الإعدادات عشان التنبيهات تشتغل.</li>
@@ -1621,17 +1605,19 @@ body.sub .adhan-bar { display: none; }
 
   // ---------- Views (bottom tabs) ----------
   try { history.replaceState({ v: "prayer", g: null }, ""); } catch (e) {}
+  var navStack = [];
   function navPush(name, g) {
     try {
       var cur = history.state || {};
       if (cur.v === name && (cur.g || null) === (g || null)) return;
+      navStack.push({ v: cur.v || "prayer", g: cur.g || null });
       history.pushState({ v: name, g: g || null }, "");
     } catch (e) {}
   }
   var views = { prayer: document.getElementById("view-prayer"), adhkar: document.getElementById("view-adhkar"), tasbeeh: document.getElementById("tasbeeh"), settings: document.getElementById("view-settings") };
   function showView(name, fromPop) {
     if (!fromPop) navPush(name, null);
-    var titles = { prayer: "ميقات", adhkar: "الأذكار", tasbeeh: "المسبحة", settings: "الإعدادات" };
+    var titles = { prayer: "زاد المؤمن", adhkar: "الأذكار", tasbeeh: "المسبحة", settings: "الإعدادات" };
     document.getElementById("pageTitle").textContent = titles[name] || "";
     document.getElementById("clockBox").hidden = name !== "prayer";
     document.getElementById("city").hidden = name !== "prayer";
@@ -1643,7 +1629,7 @@ body.sub .adhan-bar { display: none; }
     window.scrollTo(0, 0);
     if (name === "tasbeeh") sizeTasbeeh();
     if (name === "settings") {
-      setSettingsGroup(null); renderStats(); renderQuran();
+      setSettingsGroup(null); renderStats();
       if (!window.__permAsked) { window.__permAsked = true; askPerm(); }
     }
   }
@@ -1655,10 +1641,22 @@ body.sub .adhan-bar { display: none; }
   window.addEventListener("popstate", function (e) {
     var wake = document.getElementById("wakeModal");
     if (wake && !wake.hidden) { try { history.pushState({ v: "prayer", g: null }, ""); } catch (x) {} return; }
+    if (navStack.length) navStack.pop();
     var s = e.state || { v: "prayer", g: null };
     showView(s.v || "prayer", true);
     if (s.v === "settings" && s.g) setSettingsGroup(s.g, true);
   });
+
+  // Native back button: go to the previous in-app screen; close the app only from the first screen
+  var AppPl = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (AppPl && typeof AppPl.addListener === "function") {
+    AppPl.addListener("backButton", function () {
+      var wk = document.getElementById("wakeModal");
+      if (wk && !wk.hidden) return;
+      if (navStack.length) { try { history.back(); } catch (x) {} return; }
+      try { AppPl.exitApp(); } catch (x) {}
+    });
+  }
 
   // ---------- Verse: a new one on each visit ----------
   (function pickVerse() {
@@ -2014,8 +2012,8 @@ body.sub .adhan-bar { display: none; }
     tzEl.count.textContent = tz.count;
     var goal = tz.target > 0 ? tz.target : 0;
     tzEl.sub.textContent = goal
-      ? "الدورة " + (tz.round + 1) + " • الهدف " + goal
-      : "الدورة " + (tz.round + 1);
+      ? "الهدف " + goal
+      : "";
     var p = goal ? Math.min(1, tz.count / goal) : 0;
     tzEl.ring.style.strokeDashoffset = String(RING * (1 - p));
     tzEl.targets.querySelectorAll(".chip-btn").forEach(function (b) {
@@ -2095,6 +2093,16 @@ body.sub .adhan-bar { display: none; }
   // ---------- Notifications ----------
   var fired = {};
   var lastSalSlot = null;
+  // Speaks the salawat reminder aloud while the app is open
+  function speakSal() {
+    try {
+      if (!("speechSynthesis" in window)) return;
+      var u = new SpeechSynthesisUtterance("صل على النبي");
+      u.lang = "ar"; u.rate = 0.9;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
   function notify(title, body) {
     try {
       if ("Notification" in window && Notification.permission === "granted") {
@@ -2203,7 +2211,7 @@ body.sub .adhan-bar { display: none; }
     if (state.salOn) {
       var salSlot = Math.floor(nowMs / (state.salMin * 60000));
       if (lastSalSlot === null) lastSalSlot = salSlot;
-      else if (salSlot !== lastSalSlot) { lastSalSlot = salSlot; notify("صلّ على النبي ﷺ", "اللهم صلّ وسلّم وبارك على نبينا محمد"); }
+      else if (salSlot !== lastSalSlot) { lastSalSlot = salSlot; notify("صلّ على النبي ﷺ", "اللهم صلّ وسلّم وبارك على نبينا محمد"); speakSal(); }
     }
     var srP = todays.filter(function (p) { return p.i === "sunrise"; })[0];
     if (state.duhaOn && srP) {
@@ -2405,7 +2413,7 @@ body.sub .adhan-bar { display: none; }
       bg.addColorStop(0, "#1c3f7a"); bg.addColorStop(1, "#0b2550");
       g.fillStyle = bg; g.fillRect(0, 0, 1080, 1350);
       g.textAlign = "center";
-      g.fillStyle = "#f6c945"; g.font = "bold 96px Amiri, serif"; g.fillText("ميقات", 540, 170);
+      g.fillStyle = "#f6c945"; g.font = "bold 96px Amiri, serif"; g.fillText("زاد المؤمن", 540, 170);
       g.fillStyle = "#ffffff"; g.font = "44px Tajawal, sans-serif"; g.fillText(c.n, 540, 245);
       g.fillText(fmtDate.format(now), 540, 305);
       var y = 430;
@@ -2730,6 +2738,20 @@ body.sub .adhan-bar { display: none; }
       "الأيام الثلاثة بعد يوم النحر. قال ﷺ: «أَيَّامُ التَّشْرِيقِ أَيَّامُ أَكْلٍ وَشُرْبٍ وَذِكْرِ اللَّهِ» رواه مسلم.",
       "يُستحب فيها الإكثار من التكبير بعد الصلوات وذكر الله. ويحرم صيامها إلا للحاج المتمتع الذي لم يجد الهدي."] }
   };
+  var OCC_EXTRA = {
+    "1-1": { type: "بداية السنة الهجرية", todo: ["الاستغفار والتوبة ومحاسبة النفس على ما مضى من العام.", "صيام أي يوم من المحرم مستحب، وأفضل الصيام بعد رمضان شهر الله المحرم."] },
+    "1-10": { type: "يوم عاشوراء (صيام مستحب)", todo: ["صيام يوم عاشوراء، ويُستحب معه صيام التاسع أو الحادي عشر مخالفةً لليهود.", "الإكثار من الذكر والدعاء والصدقة."] },
+    "3-12": { type: "ذكرى المولد النبوي (محل خلاف بين العلماء)", todo: ["الإكثار من الصلاة والسلام على النبي ﷺ وقراءة سيرته.", "الالتزام بسنته في الاتباع والتعامل، والبعد عن كل ما يخالف الشرع."] },
+    "7-27": { type: "ذكرى الإسراء والمعراج", todo: ["المحافظة على الصلوات الخمس في وقتها، فهي فرضت في ليلة المعراج.", "قراءة سورة الإسراء وتدبّر أولها."] },
+    "8-15": { type: "ليلة النصف من شعبان", todo: ["الإكثار من الطاعات والصيام في شعبان عامةً، فهو شهر ترفع فيه الأعمال.", "قضاء ما على الإنسان من صيام رمضان السابق قبل دخول رمضان."] },
+    "9-1": { type: "أول أيام شهر رمضان", todo: ["النية للصيام من الليل، والإكثار من تلاوة القرآن والصدقة وقيام الليل.", "بداية الشهر تثبت بالرؤية الشرعية، والتاريخ في التطبيق تقديري وقد يختلف بيوم عن إعلان دار الإفتاء."] },
+    "9-27": { type: "ليلة القدر (تُلتمس في العشر الأواخر)", todo: ["قيام الليل والدعاء والاستغفار.", "الاجتهاد في العشر الأواخر كلها، وخاصةً في الأوتار: 21 و23 و25 و27 و29."] },
+    "10-1": { type: "عيد الفطر المبارك", todo: ["إخراج زكاة الفطر قبل صلاة العيد.", "صلاة العيد في جماعة، والتكبير، ومخالفة الطريق في الذهاب والعودة، وصلة الرحم."] },
+    "12-8": { type: "يوم التروية (موسم الحج)", todo: ["للحاج: الإحرام بالحج والتوجه إلى منى.", "لغير الحاج: الإكثار من الذكر والعمل الصالح في العشر الأول من ذي الحجة."] },
+    "12-9": { type: "يوم عرفة", todo: ["صيام يوم عرفة لغير الحاج مستحب، وهو يكفّر السنة التي قبله والتي بعده.", "الإكثار من الدعاء وخير الذكر: «لا إله إلا الله وحده لا شريك له»."] },
+    "12-10": { type: "عيد الأضحى المبارك", todo: ["صلاة العيد في جماعة، ثم ذبح الأضحية لمن استطاع.", "الأكل من الأضحية والتصدق بها وإهداؤها، والتكبير."] },
+    "12-11": { type: "أيام التشريق", todo: ["التكبير عقب الصلوات المكتوبة من فجر يوم عرفة إلى عصر آخر أيام التشريق.", "الإكثار من ذكر الله، وتحرم فيها الصيام إلا للحاج المتمتع الذي لم يجد الهدي."] }
+  };
   var occCur = null;
   var occCache = { key: "", res: null };
   function nextOccasion(now) {
@@ -2750,7 +2772,16 @@ body.sub .adhan-bar { display: none; }
     document.getElementById("occMTitle").textContent = info.name;
     var body = document.getElementById("occMBody");
     body.innerHTML = "";
+    var ex = OCC_EXTRA[occCur] || {};
+    if (ex.type) { var tp = document.createElement("p"); tp.className = "occ-type"; tp.textContent = "نوع المناسبة: " + ex.type; body.appendChild(tp); }
     info.body.forEach(function (t) { var p = document.createElement("p"); p.textContent = t; body.appendChild(p); });
+    if (ex.todo && ex.todo.length) {
+      var hd = document.createElement("p"); hd.className = "occ-sub"; hd.textContent = "اللي تعمله فيها:"; body.appendChild(hd);
+      var ul = document.createElement("ul");
+      ex.todo.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+      body.appendChild(ul);
+    }
+    var note = document.createElement("p"); note.className = "muted"; note.textContent = "التاريخ الهجري محسوب فلكياً وقد يختلف بيوم حسب رؤية الهلال وإعلان دار الإفتاء. اسأل أهل العلم في التفاصيل."; body.appendChild(note);
     document.getElementById("occModal").hidden = false;
   }
   document.getElementById("occMore").addEventListener("click", openOcc);
@@ -2817,7 +2848,7 @@ body.sub .adhan-bar { display: none; }
   function recordStats(dayKey) {
     var pd = prayed[dayKey] || {};
     var pr = PRAY_ORDER.filter(function (k) { return !!pd[k]; });
-    var v = { m: catPercent("morning"), e: catPercent("evening"), pr: pr, p: pr.length, q: quran.logDay === dayKey ? 1 : 0 };
+    var v = { m: catPercent("morning"), e: catPercent("evening"), pr: pr, p: pr.length };
     var old = stats[dayKey];
     if (old && JSON.stringify(old) === JSON.stringify(v)) return;
     stats[dayKey] = v;
@@ -2931,64 +2962,10 @@ body.sub .adhan-bar { display: none; }
     PRAY_ORDER.forEach(function (k) { dayTile(ICO.mosque, PRAY_NAME[k], (v.pr || []).indexOf(k) >= 0, ""); });
     dayTile(ICO.sun, "أذكار الصباح", v.m > 0, v.m > 0 ? v.m + "%" : "");
     dayTile(ICO.moon, "أذكار المساء", v.e > 0, v.e > 0 ? v.e + "%" : "");
-    dayTile(ICO.book, "ورد القرآن", v.q === 1, "");
     box.appendChild(tiles);
   }
 
   // ---------- Quran progress ----------
-  var QURAN_KEY = "quran-v1";
-  var quran = { page: 0, goal: 5, logDay: "" };
-  try {
-    var rq = localStorage.getItem(QURAN_KEY);
-    if (rq) {
-      var pq = JSON.parse(rq);
-      if (pq && typeof pq.page === "number") quran.page = pq.page;
-      if (pq && typeof pq.goal === "number") quran.goal = pq.goal;
-      if (pq && typeof pq.logDay === "string") quran.logDay = pq.logDay;
-    }
-  } catch (e) {}
-  function saveQuran() { try { localStorage.setItem(QURAN_KEY, JSON.stringify(quran)); } catch (e) {} }
-  function renderQuran() {
-    var today = cairoDayKey(new Date());
-    document.getElementById("qPage").value = String(quran.page);
-    document.getElementById("qGoal").value = String(quran.goal);
-    var juz = Math.max(1, Math.min(30, Math.ceil(quran.page / 20)));
-    document.getElementById("qInfo").textContent = "الصفحة " + quran.page + " من 604 • الجزء " + juz + " تقريباً • " + Math.round(quran.page / 604 * 100) + "%";
-    var qLog = document.getElementById("qLog");
-    qLog.disabled = quran.logDay === today;
-    qLog.textContent = quran.logDay === today ? "تم تسجيل ورد اليوم" : "سجّلت ورد اليوم";
-  }
-
-  // ---------- Wiring ----------
-  document.getElementById("calPrev").addEventListener("click", function () { shiftMonth(-1); });
-  document.getElementById("calNext").addEventListener("click", function () { shiftMonth(1); });
-  var calBox = document.getElementById("calBox");
-  var swipeX = null;
-  calBox.addEventListener("touchstart", function (e) { swipeX = e.touches[0].clientX; }, { passive: true });
-  calBox.addEventListener("touchend", function (e) {
-    if (swipeX === null) return;
-    var dx = e.changedTouches[0].clientX - swipeX;
-    swipeX = null;
-    if (Math.abs(dx) > 40) shiftMonth(dx < 0 ? 1 : -1);
-  }, { passive: true });
-  var friOn = document.getElementById("friOn");
-  friOn.checked = state.friOn;
-  friOn.addEventListener("change", function () { state.friOn = friOn.checked; save(); if (friOn.checked) askPerm(); });
-
-  document.getElementById("qPage").addEventListener("change", function () {
-    quran.page = Math.max(0, Math.min(604, parseInt(this.value, 10) || 0));
-    saveQuran(); renderQuran();
-  });
-  document.getElementById("qGoal").addEventListener("change", function () {
-    quran.goal = Math.max(1, Math.min(100, parseInt(this.value, 10) || 5));
-    saveQuran(); renderQuran();
-  });
-  document.getElementById("qLog").addEventListener("click", function () {
-    quran.page = Math.min(604, quran.page + quran.goal);
-    quran.logDay = cairoDayKey(new Date());
-    saveQuran(); renderQuran();
-  });
-
   function distKm(lat1, lon1, lat2, lon2) {
     var dLat = rad(lat2 - lat1), dLon = rad(lon2 - lon1);
     var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
@@ -3062,7 +3039,6 @@ body.sub .adhan-bar { display: none; }
     this.setAttribute("aria-expanded", String(open));
   });
   renderTz();
-  renderQuran();
 
   // ---------- Reading size, contrast and calendar settings ----------
   function applyDisplay() {
@@ -3244,14 +3220,19 @@ body.sub .adhan-bar { display: none; }
   function updatePersistent() {
     var AN = anPlugin();
     if (!AN) return;
-    if (!state.persist) { AN.stop().catch(function () {}); return; }
+    state.persist = true;
     var now = Date.now(), c = currentCity(), today = cairoDayStartUTC(new Date()), parts = [];
     for (var d = 0; d < 3; d++) {
       prayerTimes(today + d * 86400000, c.lat, c.lon, state.asr).forEach(function (p) {
         if (p.i !== "sunrise" && p.t > now) parts.push(p.t + "|" + p.k);
       });
     }
-    AN.update({ times: parts.join(";") }).catch(function () {});
+    var sal = [];
+    if (state.salOn) {
+      var SM = state.salMin * 60000;
+      for (var t1 = Math.ceil((now + 1) / SM) * SM; sal.length < 150 && t1 < now + 86400000; t1 += SM) sal.push(t1);
+    }
+    AN.update({ times: parts.join(";"), sal: sal.join(";") }).catch(function () {});
   }
   function scheduleSync() {
     clearTimeout(syncTimer);
@@ -3324,7 +3305,7 @@ body.sub .adhan-bar { display: none; }
   });
 
   // ---------- Settings menu and groups ----------
-  var SG_LABELS = { tasbeeh: "المسبحة", adhan: "الأذان والصوت", alerts: "التنبيهات والخلفية", theme: "شكل التطبيق", prayer: "المواقيت والمدينة", stats: "تقويم إنجازاتي", general: "نسخ احتياطي وورد القرآن" };
+  var SG_LABELS = { tasbeeh: "المسبحة", adhan: "الأذان والصوت", alerts: "التنبيهات والخلفية", theme: "شكل التطبيق", prayer: "المواقيت والمدينة", stats: "تقويم إنجازاتي", general: "نسخ احتياطي" };
   function setSettingsGroup(g, fromPop) {
     if (g && !fromPop) navPush("settings", g);
     document.getElementById("sgMenu").hidden = !!g;
@@ -3349,9 +3330,6 @@ body.sub .adhan-bar { display: none; }
   });
 
   // Persistent notification and background settings (APK)
-  var persistOn = document.getElementById("persistOn");
-  persistOn.checked = state.persist;
-  persistOn.addEventListener("change", function () { state.persist = persistOn.checked; save(); updatePersistent(); });
   document.getElementById("openBattery").addEventListener("click", function () {
     var AN = anPlugin(); if (AN) AN.openBattery().catch(function () {});
   });
