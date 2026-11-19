@@ -34,7 +34,7 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: App icon (ميقات)
+      - name: App icon (زاد المؤمن)
         run: |
           RES=android/app/src/main/res
           mkdir -p "$RES/drawable" "$RES/mipmap-anydpi-v26"
@@ -58,6 +58,17 @@ jobs:
           </adaptive-icon>
           XML
           done
+
+      - name: Replace splash screen with the app icon artwork
+        run: |
+          RES=android/app/src/main/res
+          find "$RES" -name 'splash.png' | while read F; do
+            case "$F" in
+              *land*) cp icon/splash-land.png "$F" ;;
+              *) cp icon/splash.png "$F" ;;
+            esac
+          done
+          echo "splash files replaced:"; find "$RES" -name 'splash.png' | wc -l
 
       - name: Use the new app icon artwork
         run: |
@@ -107,11 +118,48 @@ jobs:
           import android.os.Handler;
           import android.os.IBinder;
           import android.os.Looper;
+              import android.speech.tts.TextToSpeech;
+              import java.util.Locale;
           import androidx.core.app.NotificationCompat;
 
           public class AdhanService extends Service {
-              private static final String CH = "prayer_status";
+              private static final String CH = "prayer_next2";
               private static final int NID = 4242;
+              private TextToSpeech tts;
+              private boolean ttsReady = false;
+              private long lastSal = 0;
+
+              @Override
+              public void onCreate() {
+                  super.onCreate();
+                  lastSal = System.currentTimeMillis();
+                  tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+                      @Override
+                      public void onInit(int status) {
+                          if (status == TextToSpeech.SUCCESS && tts != null) {
+                              tts.setLanguage(new Locale("ar"));
+                              ttsReady = true;
+                          }
+                      }
+                  });
+              }
+
+              private void checkSalawat() {
+                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("sal", "");
+                  if (raw == null || raw.isEmpty()) return;
+                  long now = System.currentTimeMillis();
+                  for (String item : raw.split(";")) {
+                      try {
+                          long at = Long.parseLong(item);
+                          if (at > lastSal && at <= now && now - at < 60000) {
+                              lastSal = at;
+                              if (ttsReady && tts != null) tts.speak("صل على النبي", TextToSpeech.QUEUE_FLUSH, null, "sal" + at);
+                              return;
+                          }
+                      } catch (NumberFormatException e) {
+                      }
+                  }
+              }
               private final Handler handler = new Handler(Looper.getMainLooper());
               private final Runnable ticker = new Runnable() {
                   @Override
@@ -130,11 +178,14 @@ jobs:
               public int onStartCommand(Intent intent, int flags, int startId) {
                   NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                   if (Build.VERSION.SDK_INT >= 26) {
-                      NotificationChannel ch = new NotificationChannel(CH, "ميقات", NotificationManager.IMPORTANCE_LOW);
+                      nm.deleteNotificationChannel("prayer_status");
+                      NotificationChannel ch = new NotificationChannel(CH, "الصلاة القادمة", NotificationManager.IMPORTANCE_DEFAULT);
                       ch.setShowBadge(false);
+                      ch.setSound(null, null);
+                      ch.enableVibration(false);
                       nm.createNotificationChannel(ch);
                   }
-                  Notification n = build(nextText());
+                  Notification n = build();
                   if (Build.VERSION.SDK_INT >= 34) {
                       startForeground(NID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
                   } else {
@@ -148,17 +199,19 @@ jobs:
               @Override
               public void onDestroy() {
                   handler.removeCallbacks(ticker);
+                  if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
                   super.onDestroy();
               }
 
               private void refresh() {
                   NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                  nm.notify(NID, build(nextText()));
+                  nm.notify(NID, build());
+                  checkSalawat();
               }
 
-              private String nextText() {
+              private Object[] nextPrayer() {
                   String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("times", "");
-                  if (raw == null || raw.isEmpty()) return "افتح التطبيق عشان المواقيت تتحدّث";
+                  if (raw == null || raw.isEmpty()) return null;
                   long now = System.currentTimeMillis();
                   long bestAt = Long.MAX_VALUE;
                   String bestName = "";
@@ -174,56 +227,40 @@ jobs:
                       } catch (NumberFormatException e) {
                       }
                   }
-                  if (bestAt == Long.MAX_VALUE) return "افتح التطبيق عشان المواقيت تتحدّث";
-                  long mins = (bestAt - now) / 60000L;
-                  long h = mins / 60L;
-                  long m = mins % 60L;
-                  String left = h > 0 ? h + " س " + m + " د" : m + " د";
-                  return "أذان " + bestName + " بعد " + left;
+                  if (bestAt == Long.MAX_VALUE) return null;
+                  return new Object[] { bestName, bestAt };
               }
 
-              private String bigText() {
-                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("times", "");
-                  if (raw == null || raw.isEmpty()) return "افتح التطبيق عشان المواقيت تتحدّث";
-                  long now = System.currentTimeMillis();
-                  java.util.TreeMap<Long, String> upcoming = new java.util.TreeMap<>();
-                  for (String item : raw.split(";")) {
-                      int bar = item.indexOf('|');
-                      if (bar < 0) continue;
-                      try {
-                          long at = Long.parseLong(item.substring(0, bar));
-                          if (at > now && !upcoming.containsKey(at)) upcoming.put(at, item.substring(bar + 1));
-                      } catch (NumberFormatException e) {
-                      }
+              private Notification build() {
+                  Object[] nx = nextPrayer();
+                  String title = "زاد المؤمن";
+                  String text = "افتح التطبيق عشان المواقيت تتحدّث";
+                  long at = 0;
+                  if (nx != null) {
+                      at = (Long) nx[1];
+                      title = "الصلاة القادمة: " + nx[0];
+                      long mins = Math.max(0, (at - System.currentTimeMillis()) / 60000L);
+                      long h = mins / 60L;
+                      long m = mins % 60L;
+                      text = "متبقي " + (h > 0 ? h + " س " + m + " د" : m + " د");
                   }
-                  StringBuilder sb = new StringBuilder();
-                  java.util.Calendar cal = java.util.Calendar.getInstance();
-                  int shown = 0;
-                  for (java.util.Map.Entry<Long, String> e : upcoming.entrySet()) {
-                      if (shown == 5) break;
-                      cal.setTimeInMillis(e.getKey());
-                      String hm = String.format(java.util.Locale.US, "%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
-                      if (sb.length() > 0) sb.append("\n");
-                      sb.append(e.getValue()).append("   ").append(hm);
-                      shown++;
-                  }
-                  return sb.length() == 0 ? "افتح التطبيق عشان المواقيت تتحدّث" : sb.toString();
-              }
-
-              private Notification build(String text) {
                   NotificationCompat.Builder b = new NotificationCompat.Builder(this, CH)
                           .setSmallIcon(R.drawable.ic_stat_prayer)
                           .setColor(0xFFF6C945)
                           .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_bg_art))
-                          .setContentTitle("ميقات")
-                          .setSubText("الأذان القادم")
+                          .setContentTitle(title)
                           .setContentText(text)
-                          .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText()))
                           .setOngoing(true)
                           .setOnlyAlertOnce(true)
-                          .setShowWhen(false)
+                          .setSilent(true)
                           .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                          .setPriority(NotificationCompat.PRIORITY_LOW);
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                  if (nx != null && Build.VERSION.SDK_INT >= 24) {
+                      b.setUsesChronometer(true).setChronometerCountDown(true).setWhen(at).setShowWhen(true);
+                      b.setContentText("متبقي على الأذان");
+                  } else {
+                      b.setShowWhen(false);
+                  }
                   Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
                   if (launch != null) {
                       launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -255,7 +292,8 @@ jobs:
               @PluginMethod
               public void update(PluginCall call) {
                   String times = call.getString("times", "");
-                  getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit().putString("times", times).apply();
+                  String sal = call.getString("sal", "");
+                  getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit().putString("times", times).putString("sal", sal).apply();
                   Intent i = new Intent(getContext(), AdhanService.class);
                   if (Build.VERSION.SDK_INT >= 26) {
                       getContext().startForegroundService(i);
@@ -408,7 +446,7 @@ jobs:
                   icon.setImageResource(R.mipmap.ic_launcher);
                   head.addView(icon, new LinearLayout.LayoutParams(dp(ctx, 36), dp(ctx, 36)));
                   TextView title = new TextView(ctx);
-                  title.setText("ميقات");
+                  title.setText("زاد المؤمن");
                   title.setTextColor(Color.parseColor("#F6C945"));
                   title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
                   title.setPadding(dp(ctx, 10), 0, 0, 0);
@@ -450,11 +488,6 @@ jobs:
                       public void onClick(View v) {
                           handler.removeCallbacks(close);
                           close.run();
-                          Intent open = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
-                          if (open != null) {
-                              open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                              ctx.startActivity(open);
-                          }
                       }
                   });
                   try {
