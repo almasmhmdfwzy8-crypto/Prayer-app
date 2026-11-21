@@ -62,6 +62,10 @@ jobs:
       - name: Replace splash screen with the app icon artwork
         run: |
           RES=android/app/src/main/res
+          if [ ! -f icon/splash.png ] || [ ! -f icon/splash-land.png ]; then
+            echo "::warning::icon/splash.png or icon/splash-land.png is missing in the repo; keeping the default splash"
+            exit 0
+          fi
           find "$RES" -name 'splash.png' | while read F; do
             case "$F" in
               *land*) cp icon/splash-land.png "$F" ;;
