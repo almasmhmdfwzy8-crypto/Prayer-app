@@ -34,6 +34,19 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Set the home-screen app name
+        run: |
+          python3 - <<'PY'
+          import re
+          p = "android/app/src/main/res/values/strings.xml"
+          s = open(p, encoding="utf-8").read()
+          s2 = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">زاد المؤمن</string>', s)
+          s2 = re.sub(r'<string name="title_activity_main">.*?</string>', '<string name="title_activity_main">زاد المؤمن</string>', s2)
+          assert s2 != s or 'زاد المؤمن' in s, "app_name not found"
+          open(p, "w", encoding="utf-8").write(s2)
+          print("app_name set to زاد المؤمن")
+          PY
+
       - name: App icon (زاد المؤمن)
         run: |
           RES=android/app/src/main/res
@@ -127,7 +140,8 @@ jobs:
           import androidx.core.app.NotificationCompat;
 
           public class AdhanService extends Service {
-              private static final String CH = "prayer_next2";
+              private static final String CH = "prayer_bar";
+              private static final String CH_MIN = "prayer_min";
               private static final int NID = 4242;
               private TextToSpeech tts;
               private boolean ttsReady = false;
@@ -183,11 +197,17 @@ jobs:
                   NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                   if (Build.VERSION.SDK_INT >= 26) {
                       nm.deleteNotificationChannel("prayer_status");
-                      NotificationChannel ch = new NotificationChannel(CH, "الصلاة القادمة", NotificationManager.IMPORTANCE_DEFAULT);
+                      nm.deleteNotificationChannel("prayer_next2");
+                      NotificationChannel ch = new NotificationChannel(CH, "الصلاة القادمة", NotificationManager.IMPORTANCE_LOW);
                       ch.setShowBadge(false);
                       ch.setSound(null, null);
                       ch.enableVibration(false);
                       nm.createNotificationChannel(ch);
+                      NotificationChannel chm = new NotificationChannel(CH_MIN, "الصلاة القادمة (مخفي)", NotificationManager.IMPORTANCE_MIN);
+                      chm.setShowBadge(false);
+                      chm.setSound(null, null);
+                      chm.enableVibration(false);
+                      nm.createNotificationChannel(chm);
                   }
                   Notification n = build();
                   if (Build.VERSION.SDK_INT >= 34) {
@@ -235,22 +255,40 @@ jobs:
                   return new Object[] { bestName, bestAt };
               }
 
+              private int colorOf(String c) {
+                  try {
+                      if (c != null && c.length() == 7 && c.charAt(0) == '#') return (int) (0xFF000000L | Long.parseLong(c.substring(1), 16));
+                  } catch (NumberFormatException e) {
+                  }
+                  return 0xFFF6C945;
+              }
+
               private Notification build() {
                   Object[] nx = nextPrayer();
+                  android.content.SharedPreferences sp = getSharedPreferences("adhan", MODE_PRIVATE);
+                  String style = sp.getString("nstyle", "full");
+                  String pos = sp.getString("npos", "bar");
+                  String color = sp.getString("ncolor", "");
+                  boolean full = !"short".equals(style);
                   String title = "زاد المؤمن";
                   String text = "افتح التطبيق عشان المواقيت تتحدّث";
                   long at = 0;
                   if (nx != null) {
                       at = (Long) nx[1];
-                      title = "الصلاة القادمة: " + nx[0];
                       long mins = Math.max(0, (at - System.currentTimeMillis()) / 60000L);
                       long h = mins / 60L;
                       long m = mins % 60L;
-                      text = "متبقي " + (h > 0 ? h + " س " + m + " د" : m + " د");
+                      if (full) {
+                          title = "الصلاة القادمة: " + nx[0];
+                          text = "متبقي " + (h > 0 ? h + " س " + m + " د" : m + " د");
+                      } else {
+                          title = String.valueOf(nx[0]);
+                          text = "الصلاة القادمة";
+                      }
                   }
-                  NotificationCompat.Builder b = new NotificationCompat.Builder(this, CH)
+                  NotificationCompat.Builder b = new NotificationCompat.Builder(this, "hidden".equals(pos) ? CH_MIN : CH)
                           .setSmallIcon(R.drawable.ic_stat_prayer)
-                          .setColor(0xFFF6C945)
+                          .setColor(colorOf(color))
                           .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_bg_art))
                           .setContentTitle(title)
                           .setContentText(text)
@@ -259,7 +297,7 @@ jobs:
                           .setSilent(true)
                           .setCategory(NotificationCompat.CATEGORY_SERVICE)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                  if (nx != null && Build.VERSION.SDK_INT >= 24) {
+                  if (nx != null && full && Build.VERSION.SDK_INT >= 24) {
                       b.setUsesChronometer(true).setChronometerCountDown(true).setWhen(at).setShowWhen(true);
                       b.setContentText("متبقي على الأذان");
                   } else {
@@ -297,7 +335,10 @@ jobs:
               public void update(PluginCall call) {
                   String times = call.getString("times", "");
                   String sal = call.getString("sal", "");
-                  getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit().putString("times", times).putString("sal", sal).apply();
+                  String nstyle = call.getString("style", "full");
+                  String npos = call.getString("pos", "bar");
+                  String ncolor = call.getString("color", "");
+                  getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit().putString("times", times).putString("sal", sal).putString("nstyle", nstyle).putString("npos", npos).putString("ncolor", ncolor).apply();
                   Intent i = new Intent(getContext(), AdhanService.class);
                   if (Build.VERSION.SDK_INT >= 26) {
                       getContext().startForegroundService(i);
