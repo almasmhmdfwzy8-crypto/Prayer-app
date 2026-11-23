@@ -769,8 +769,7 @@ body.sub .adhan-bar { display: none; }
 .mq-index { max-height: none; }
 
 /* ---------- Mushaf v2: fitted page, parchment palette, compact header ---------- */
-.mq-full { --mq-paper: #eef0f2; --mq-ink: #1e2630; --mq-accent: #3e5c76; --mq-line: #b7c2cd; --mq-soft: #e2e7ec; background: var(--mq-paper); }
-:root[data-theme="night"] .mq-full { --mq-paper: #151a21; --mq-ink: #dfe6ee; --mq-accent: #8fb3d9; --mq-line: #2c3744; --mq-soft: #1b222b; }
+.mq-full { --mq-paper: var(--surface); --mq-soft: color-mix(in srgb, var(--gold) 7%, var(--surface-2)); --mq-ink: var(--ink); --mq-accent: var(--accent); --mq-line: color-mix(in srgb, var(--gold) 55%, var(--line)); background: var(--mq-paper); }
 .mq-bar { background: var(--mq-paper); border-bottom: 1px solid var(--mq-line); padding: 6px 12px; }
 .mq-info strong { color: var(--mq-accent); }
 .mq-info span { color: var(--mq-ink); opacity: 0.6; }
@@ -852,7 +851,7 @@ body.mq-on .brand h1 { font-size: 1rem; }
 .mq-chip { font-family: "Amiri", "Traditional Arabic", serif; font-weight: 700; font-size: 0.95rem; color: var(--mq-accent); border: 1.5px solid var(--mq-line); border-radius: 6px; padding: 2px 12px; background: var(--mq-paper); white-space: nowrap; }
 .mq-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
 .mq-body .mq-text { width: 100%; max-width: none; margin: 0; }
-.m-par { text-align: justify; text-align-last: justify; }
+.m-par { text-align: justify; text-align-last: start; }
 .mq-foot { flex: 0 0 auto; display: flex; justify-content: center; padding-top: 6px; margin-top: 6px; border-top: 1.5px solid var(--mq-line); }
 .mq-pageno { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 6px; box-sizing: border-box; border: 1.5px solid var(--mq-line); border-radius: 50%; font-family: "Amiri", serif; font-weight: 700; font-size: 1rem; color: var(--mq-accent); background: var(--mq-paper); }
 .mq-juzmark { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; padding: 10px 4px; border: 1.5px solid var(--mq-line); border-radius: 14px; background: var(--mq-paper); color: var(--mq-accent); font-family: "Amiri", serif; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; }
@@ -907,12 +906,46 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
 .rd-open strong { display: block; font-size: 1.02rem; line-height: 1.7; }
 .rd-open small { display: block; color: var(--muted); margin-top: 2px; }
 .dh.rd.done .rd-open strong { color: var(--accent); }
+/* ---------- v54: visible Mushaf bar, persistent notification colours, adhan test ---------- */
+#view-mushaf .mq-bar { opacity: 1; pointer-events: auto; top: 0; left: 0; right: 0; background: var(--mq-paper); padding: calc(6px + env(safe-area-inset-top, 0px)) 10px 6px; border-bottom: 1px solid var(--mq-line); }
+#view-mushaf .mq-page { top: 56px; }
+.chip-btn.sw::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--sw); margin-inline-end: 6px; vertical-align: middle; }
+.pn-custom { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-size: 0.9rem; }
+.pn-custom input[type=color] { width: 26px; height: 26px; border: 0; padding: 0; background: none; cursor: pointer; }
+/* ---------- v55: one row of controls inside the Mushaf frame, bigger page ---------- */
+#view-mushaf .mq-page { position: relative; inset: auto; top: auto; flex: 1 1 auto; min-height: 0; margin: 0; padding: 4px; }
+#view-mushaf .mq-frame { flex: 1 1 auto; height: auto; min-height: 0; padding: 6px 8px; }
+#view-mushaf .mq-bar { position: relative; top: auto; left: auto; right: auto; z-index: auto; flex: 0 0 auto; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding: 0 0 2px; margin: 0; background: transparent; border-bottom: 0; opacity: 1; pointer-events: auto; }
+#view-mushaf .mq-bar .mq-prog { position: relative; left: auto; right: auto; bottom: auto; flex: 1 1 auto; min-width: 0; height: 4px; margin: 0 4px; }
+#view-mushaf .mq-menu { width: 38px; height: 34px; flex: 0 0 38px; border-radius: 10px; }
+#view-mushaf .mq-head { padding-bottom: 0; margin-bottom: 4px; border-bottom: 0; }
+#view-mushaf .mq-foot { padding-top: 0; margin-top: 2px; border-top: 0; }
+#view-mushaf .mq-frame { background: var(--mq-soft); }
+#view-mushaf .mq-menu { background: var(--mq-soft); }
+#view-mushaf .mq-prog { background: var(--mq-line); }
+/* ---------- v58: clearer Mushaf text, no stretched last line, sound-based wake alarm ---------- */
+#view-mushaf .mq-text { font-weight: 700; color: var(--ink); text-shadow: none; }
+#view-mushaf .m-par { text-align-last: start; }
+#view-mushaf .mq-juzmark { display: none; }
+/* ---------- v57: update banner ---------- */
+.upd-banner { position: fixed; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); z-index: 95; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: var(--shadow); }
+.upd-go { border: 0; border-radius: 10px; padding: 6px 14px; background: var(--gold); color: var(--gold-ink); font: inherit; font-weight: 800; cursor: pointer; }
+/* ---------- v56: Mushaf controls beside the title in the header, bigger page, theme-linked colours ---------- */
+.hdr-mq { display: none; }
+body.mq-on .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+body.mq-on .topbar .brand { flex: 1 1 auto; justify-content: center; min-width: 0; }
+body.mq-on .hdr-mq { display: grid; place-items: center; width: 38px; height: 36px; flex: 0 0 38px; padding: 0; border-radius: 12px; border: 1px solid rgb(255 255 255 / 0.3); background: rgb(255 255 255 / 0.1); color: #fff; }
+body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
+#view-mushaf .mq-bar { padding: 0 0 4px; margin: 0 0 2px; }
+#view-mushaf .mq-page { padding: 2px; }
+#view-mushaf .mq-frame { padding: 6px; }
 </style>
 </head>
 <body>
 
 <header class="hero-top">
   <div class="topbar">
+    <button class="hdr-mq" id="mqBack" type="button" aria-label="رجوع للصلاة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
     <div class="brand">
       <span class="frame"><svg class="moon" viewBox="0 0 48 48" aria-hidden="true">
         <path d="M30 6a18 18 0 1 0 12 30A15 15 0 0 1 30 6z" fill="#f7d98a"/>
@@ -922,6 +955,7 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
         <h1 id="pageTitle"></h1>
         <button class="frame-quran" id="quranBtn" type="button" aria-label="فتح المصحف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7.5 4.5 4 5v13c3.5-.5 6 0 8 1.5 2-1.5 4.5-2 8-1.5V5c-3.5-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></svg></button></span>
     </div>
+    <button class="hdr-mq" id="mqMenuBtn" type="button" aria-label="خيارات المصحف" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
   </div>
   <div class="clock" id="clockBox">
     <div class="time" id="now"></div>
@@ -1011,15 +1045,11 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
 
 <!-- ============ Mushaf view (full page reader) ============ -->
 <main class="mq-full" id="view-mushaf" hidden>
-  <div class="mq-bar">
-    <button class="mq-menu" id="mqBack" type="button" aria-label="رجوع للصلاة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-    <button class="mq-menu" id="mqMenuBtn" type="button" aria-label="خيارات المصحف" aria-haspopup="dialog">
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-    </button>
-    <div class="bar mq-prog" aria-hidden="true"><span id="mqBar"></span></div>
-  </div>
   <div class="mq-page" aria-live="polite">
     <div class="mq-frame">
+      <div class="mq-bar">
+        <div class="bar mq-prog" aria-hidden="true"><span id="mqBar"></span></div>
+      </div>
       <div class="mq-head">
         <span class="mq-chip" id="mqJuz"></span>
         <span class="mq-chip mq-surah-chip" id="mqSurah"></span>
@@ -1027,7 +1057,6 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
       <div class="mq-body"><div id="mqText" class="mq-text"></div></div>
       <div class="mq-foot"><span class="mq-pageno" id="mqPageNo"></span></div>
     </div>
-    <div class="mq-juzmark" id="mqJuzMark" aria-hidden="true"></div>
   </div>
 </main>
 
@@ -1149,7 +1178,7 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
     <div class="row" style="margin-bottom:10px"><span class="lbl">الموضع</span>
       <div class="chips-grid" id="pnPos"><button class="chip-btn" data-v="bar" type="button">شريط الحالة</button><button class="chip-btn" data-v="hidden" type="button">مخفي</button></div></div>
     <div class="row"><span class="lbl">اللون</span>
-      <div class="chips-grid" id="pnColor"><button class="chip-btn" data-v="theme" type="button">مع الثيم</button><button class="chip-btn" data-v="default" type="button">افتراضي</button></div></div>
+      <div class="chips-grid" id="pnColor"><button class="chip-btn" data-v="theme" type="button">مع الثيم</button><button class="chip-btn" data-v="default" type="button">افتراضي</button><button class="chip-btn sw" data-v="#0F766E" style="--sw:#0F766E" type="button">زمردي</button><button class="chip-btn sw" data-v="#1E3A5F" style="--sw:#1E3A5F" type="button">كحلي</button><button class="chip-btn sw" data-v="#7C2D12" style="--sw:#7C2D12" type="button">بني</button><button class="chip-btn sw" data-v="#4C1D95" style="--sw:#4C1D95" type="button">بنفسجي</button><button class="chip-btn sw" data-v="#B45309" style="--sw:#B45309" type="button">ذهبي</button><button class="chip-btn sw" data-v="#111827" style="--sw:#111827" type="button">ليلي</button><label class="pn-custom">لون مخصص <input type="color" id="pnCustom" value="#0F766E" aria-label="لون مخصص للإشعار"></label></div></div>
   </section>
 
   <section class="card" data-sg="alerts">
@@ -1182,9 +1211,9 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
       <input class="field" type="time" id="qiyamTime" value="22:00" aria-label="وقت تذكير قيام الليل">
     </div>
     <div class="row" style="margin-bottom:12px">
-      <span class="lbl">تنبيه الفجر بأسئلة (يصحّيك)</span>
+      <span class="lbl">تنبيه الفجر بصوت وأسئلة (يصحّيك)</span>
       <label class="switch">
-        <input type="checkbox" id="wakeOn" aria-label="تنبيه الفجر بأسئلة">
+        <input type="checkbox" id="wakeOn" aria-label="تنبيه الفجر بصوت وأسئلة">
         <span></span>
       </label>
     </div>
@@ -1192,7 +1221,12 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
       <span class="lbl">وقت تنبيه الفجر</span>
       <input class="field" type="time" id="wakeTime" value="04:30" aria-label="وقت تنبيه الفجر">
     </div>
-    <p class="muted" style="margin:-4px 0 12px">لما الوقت يجي، هتظهر شاشة فيها سؤالين حساب وسؤال ديني. لازم تجاوب صح عشان تقفل التنبيه.</p>
+    <div class="row" style="margin-bottom:12px">
+      <span class="lbl">صوت تنبيه الفجر</span>
+      <select class="field" id="wakeSound" aria-label="صوت تنبيه الفجر"></select>
+    </div>
+    <button class="btn ghost block" id="wakeAddSound" type="button" style="margin-bottom:12px">إضافة صوت من الجهاز</button>
+    <p class="muted" style="margin:-4px 0 12px">لما الوقت يجي، الصوت هيشتغل ومش هيقف غير لما تجاوب على الأسئلة صح، علشان متنامش تاني.</p>
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تذكير أذكار ما بعد الصلاة</span>
       <label class="switch">
@@ -1451,7 +1485,7 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
   </button>
 </nav>
 
-<!-- ============ Fajr wake-up questions ============ -->
+<!-- ============ Fajr wake-up alarm ============ -->
 <div class="welcome" id="wakeModal" role="alertdialog" aria-modal="true" aria-label="تنبيه الفجر" hidden>
   <section class="card">
     <div id="wakeBody"></div>
@@ -1713,7 +1747,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
 
   // ---------- Saved state ----------
   var KEY = "prayer-pro-v3";
-  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
+  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -1739,6 +1773,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (s && typeof s.wakeOn === "boolean") state.wakeOn = s.wakeOn;
       if (s && typeof s.wakeTime === "string" && /^\d{2}:\d{2}$/.test(s.wakeTime)) state.wakeTime = s.wakeTime;
       if (s && typeof s.wakeDoneDay === "string") state.wakeDoneDay = s.wakeDoneDay;
+      if (s && typeof s.wakeSoundId === "string") state.wakeSoundId = s.wakeSoundId;
       if (s && typeof s.salOn === "boolean") state.salOn = s.salOn;
       if (s && [10, 15, 20, 30, 45, 60].indexOf(s.salMin) >= 0) state.salMin = s.salMin;
       if (s && typeof s.duhaOn === "boolean") state.duhaOn = s.duhaOn;
@@ -2098,10 +2133,19 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var cur = { pnStyle: state.pnStyle || "full", pnPos: state.pnPos || "bar", pnColor: state.pnColor || "theme" };
     Object.keys(cur).forEach(function (key) {
       document.getElementById(key).querySelectorAll(".chip-btn").forEach(function (b) {
-        b.setAttribute("aria-pressed", b.getAttribute("data-v") === cur[key] ? "true" : "false");
+        b.setAttribute("aria-pressed", (b.getAttribute("data-v") || "").toLowerCase() === String(cur[key]).toLowerCase() ? "true" : "false");
       });
     });
   }
+  function pnColorValue() {
+    var c = state.pnColor || "theme";
+    if (c === "default") return "";
+    if (/^#[0-9a-fA-F]{6}$/.test(c)) return c;
+    return accentHex();
+  }
+  var pnCustomEl = document.getElementById("pnCustom");
+  if (/^#[0-9a-fA-F]{6}$/.test(state.pnColor || "")) pnCustomEl.value = state.pnColor;
+  pnCustomEl.addEventListener("change", function () { state.pnColor = pnCustomEl.value; save(); pnRender(); updatePersistent(); });
   ["pnStyle", "pnPos", "pnColor"].forEach(function (key) {
     document.getElementById(key).addEventListener("click", function (e) {
       var b = e.target.closest(".chip-btn");
@@ -2168,7 +2212,6 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     document.getElementById("mqSurah").textContent = "سورة " + S[lines[0][0] - 1].name;
     document.getElementById("mqJuz").textContent = "الجزء " + arNum(MUSHAF_DATA.J[p - 1]);
     document.getElementById("mqPageNo").textContent = arNum(p);
-    document.getElementById("mqJuzMark").textContent = "الجزء " + arNum(MUSHAF_DATA.J[p - 1]);
     document.getElementById("mqBar").style.width = (p / 604 * 100).toFixed(2) + "%";
     var box = document.getElementById("mqText");
     box.textContent = "";
@@ -2563,6 +2606,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   function loadSounds() {
     return dbRun("readonly", function (st) { return st.getAll(); }).then(function (rows) {
       sounds = BUILTIN.concat(rows || []);
+      renderWakeSound();
     }).catch(function () { sounds = BUILTIN.slice(); });
   }
   function soundUrl(s) {
@@ -2611,6 +2655,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (s.builtin) x.style.display = "none";
       b.appendChild(x);
       b.addEventListener("click", function (e) {
+        stopAdhanTests();
         if (e.target === x || x.contains(e.target)) {
           removeSound(s.id);
           return;
@@ -2654,7 +2699,16 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     });
     el.adhanFile.value = "";
   });
+  function stopAdhanTests() {
+    try { if (adhanAudio) { adhanAudio.pause(); adhanAudio.currentTime = 0; } } catch (e) {}
+    try { var AN0 = anPlugin(); if (AN0 && AN0.stop) AN0.stop().catch(function () {}); } catch (e) {}
+    if (NATIVE) {
+      try { NATIVE.cancel({ notifications: [{ id: 99999 }] }).catch(function () {}); } catch (e) {}
+      try { NATIVE.removeDeliveredNotifications({ notifications: [{ id: 99999 }] }).catch(function () {}); } catch (e) {}
+    }
+  }
   el.adhanTest.addEventListener("click", function () {
+    stopAdhanTests();
     if (!adhanAudio) { el.adhanNote.textContent = "اختار صوت أذان الأول."; return; }
     try {
       adhanAudio.currentTime = 0;
@@ -2802,11 +2856,22 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   var fired = {};
   var lastSalSlot = null;
   // Speaks the salawat reminder aloud while the app is open
+  // v56: a male Arabic voice, lower pitch and clear pace, so the reminder is heard as a voice
+  function pickMaleArVoice() {
+    var vs = [];
+    try { vs = speechSynthesis.getVoices() || []; } catch (e) {}
+    var ar = vs.filter(function (v) { return /^ar/i.test(v.lang); });
+    var male = ar.filter(function (v) { return /male|maged|omar|tarik|ahmad|hamed|-d$|-b$/i.test(v.name) && !/female/i.test(v.name); });
+    return male[0] || ar.filter(function (v) { return !/female|salma|hoda|zariyah|-a$|-c$/i.test(v.name); })[0] || ar[0] || null;
+  }
   function speakSal() {
     try {
       if (!("speechSynthesis" in window)) return;
-      var u = new SpeechSynthesisUtterance("صل على النبي");
-      u.lang = "ar"; u.rate = 0.9;
+      var u = new SpeechSynthesisUtterance("صَلِّ عَلَى النَّبِيِّ");
+      var voice = pickMaleArVoice();
+      u.lang = voice ? voice.lang : "ar";
+      if (voice) u.voice = voice;
+      u.rate = 0.85; u.pitch = 0.75; u.volume = 1;
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
     } catch (e) {}
@@ -2920,7 +2985,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     if (state.salOn) {
       var salSlot = Math.floor(nowMs / (state.salMin * 60000));
       if (lastSalSlot === null) lastSalSlot = salSlot;
-      else if (salSlot !== lastSalSlot) { lastSalSlot = salSlot; notify("صلّ على النبي ﷺ", "اللهم صلّ وسلّم وبارك على نبينا محمد"); speakSal(); }
+      else if (salSlot !== lastSalSlot) { lastSalSlot = salSlot; speakSal(); }
     }
     var srP = todays.filter(function (p) { return p.i === "sunrise"; })[0];
     if (state.duhaOn && srP) {
@@ -3001,6 +3066,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   }
 
   // ---------- Fajr wake-up (questions, so you actually get up) ----------
+  function wakeRand(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
   var WAKE_BANK = [
     { q: "كم عدد ركعات صلاة الفجر؟", o: ["ركعتان", "ثلاث ركعات", "أربع ركعات"], a: 0 },
     { q: "كم عدد الصلوات المفروضة في اليوم والليلة؟", o: ["٤ صلوات", "٥ صلوات", "٦ صلوات"], a: 1 },
@@ -3008,6 +3074,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     { q: "في أي شهر يصوم المسلم فرضًا؟", o: ["شعبان", "محرم", "رمضان"], a: 2 },
     { q: "ما الذي يُقال أول ما يستيقظ المسلم من نومه؟", o: ["الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور", "بسم الله الرحمن الرحيم", "الله أكبر"], a: 0 }
   ];
+
   var wakeQ = { a: [], mcq: null };
   function wakeRand(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
   function newWakeQs() {
@@ -3032,13 +3099,40 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     document.getElementById("wakeBody").innerHTML = html;
   }
   var wakeFinal = false;
-  function wakeOpen() {
+  var wakeAudio = null;
+  function stopWakeSound() { try { if (wakeAudio) { wakeAudio.pause(); wakeAudio.currentTime = 0; } } catch (e) {} wakeAudio = null; }
+  function startWakeSound() {
+    stopWakeSound();
+    try {
+      var list = sounds.length ? sounds : BUILTIN;
+      var s = list.filter(function (x) { return x.id === state.wakeSoundId; })[0] || list[0] || null;
+      if (!s) return;
+      wakeAudio = new Audio(soundUrl(s));
+      wakeAudio.loop = true;
+      var pr = wakeAudio.play(); if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) {}
+  }
+  function renderWakeSound() {
+    var sel = document.getElementById("wakeSound");
+    if (!sel) return;
+    sel.textContent = "";
+    sounds.forEach(function (x) { var o = document.createElement("option"); o.value = x.id; o.textContent = x.name; sel.appendChild(o); });
+    var has = sounds.some(function (x) { return x.id === state.wakeSoundId; });
+    if (!has && sounds.length) state.wakeSoundId = sounds[0].id;
+    sel.value = state.wakeSoundId || "";
+  }
+  function wakeAsk() {
     wakeFinal = false;
     document.getElementById("wakeOkBtn").textContent = "تأكيد الإجابة";
     newWakeQs(); renderWake();
-    document.getElementById("wakeModal").hidden = false;
   }
-  function wakeClose() { document.getElementById("wakeModal").hidden = true; }
+  function wakeOpen() {
+    wakeAsk();
+    document.getElementById("wakeErr").textContent = "";
+    document.getElementById("wakeModal").hidden = false;
+    if (!wakeAudio) startWakeSound();
+  }
+  function wakeClose() { stopWakeSound(); document.getElementById("wakeModal").hidden = true; }
   // Shows the wake screen from the alarm time until 3 hours later, until solved for the day
   function checkWake(now) {
     var modal = document.getElementById("wakeModal");
@@ -3072,14 +3166,21 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var pick = document.querySelector('input[name="wakeM"]:checked');
     var okM = !!pick && +pick.value === wakeQ.mcq.a;
     if (!(okA && okM)) {
-      wakeOpen();
+      wakeAsk();
       document.getElementById("wakeErr").textContent = "إجابة غلط. جرب تاني، والأسئلة اتغيّرت.";
       return;
     }
     wakeFinal = true;
+    stopWakeSound();
     document.getElementById("wakeBody").innerHTML = '<h2 class="h">ما شاء الله، قمت</h2><p class="qtext">الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور</p>';
     document.getElementById("wakeErr").textContent = "";
     document.getElementById("wakeOkBtn").textContent = "بسم الله، ابدأ يومك";
+  });
+  document.getElementById("wakeSound").addEventListener("change", function () {
+    state.wakeSoundId = this.value; save();
+  });
+  document.getElementById("wakeAddSound").addEventListener("click", function () {
+    document.getElementById("adhanFile").click();
   });
 
   // ---------- Helpers for the new reminders ----------
@@ -3831,6 +3932,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   // Test the adhan notification (APK) or the in-page version (browser)
   document.getElementById("adhanNotifTest").addEventListener("click", function () {
     var note = el.adhanNote;
+    stopAdhanTests();
     if (NATIVE) {
       NATIVE.requestPermissions()
         .then(function () {
@@ -3993,7 +4095,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       var SM = state.salMin * 60000;
       for (var t1 = Math.ceil((now + 1) / SM) * SM; sal.length < 150 && t1 < now + 86400000; t1 += SM) sal.push(t1);
     }
-    AN.update({ times: parts.join(";"), sal: sal.join(";"), style: state.pnStyle || "full", pos: state.pnPos || "bar", color: state.pnColor === "default" ? "" : accentHex() }).catch(function () {});
+    AN.update({ times: parts.join(";"), sal: sal.join(";"), style: state.pnStyle || "full", pos: state.pnPos || "bar", color: pnColorValue() }).catch(function () {});
   }
   function scheduleSync() {
     clearTimeout(syncTimer);
@@ -4113,6 +4215,39 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   applyKeepAwake();
   render();
   setInterval(render, 1000);
+
+  // ---------- v57: in-app update check (APK only), using the latest GitHub release ----------
+  var APP_BUILD = 0; // the build workflow sets this to the run number
+  var UPD_REPO = "almasmhmdfwzy8-crypto/Prayer-app";
+  function showUpdateBanner(url) {
+    var b = document.createElement("div");
+    b.className = "upd-banner";
+    b.setAttribute("role", "status");
+    var txt = document.createElement("span"); txt.textContent = "فيه تحديث جديد للتطبيق";
+    var go = document.createElement("button"); go.type = "button"; go.className = "upd-go"; go.textContent = "تحديث";
+    go.addEventListener("click", function () {
+      var AN = anPlugin();
+      if (!AN || !AN.installUpdate) return;
+      showAppToast("بنحمّل التحديث...");
+      AN.installUpdate({ url: url }).catch(function () { showAppToast("مقدرناش نحمّل التحديث، حاول تاني"); });
+    });
+    b.appendChild(txt); b.appendChild(go);
+    document.body.appendChild(b);
+  }
+  function checkUpdate() {
+    var AN = anPlugin();
+    if (!NATIVE || !AN || !AN.installUpdate || !APP_BUILD) return;
+    fetch("https://api.github.com/repos/" + UPD_REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rel) {
+        if (!rel || !rel.tag_name) return;
+        var n = parseInt(String(rel.tag_name).replace(/\D/g, ""), 10);
+        var apk = (rel.assets || []).filter(function (a) { return /\.apk$/i.test(a.name); })[0];
+        if (n && n > APP_BUILD && apk) showUpdateBanner(apk.browser_download_url);
+      })
+      .catch(function () {});
+  }
+  setTimeout(checkUpdate, 3000);
 })();
 </script>
 </body>
