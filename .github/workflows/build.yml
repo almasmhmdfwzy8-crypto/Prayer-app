@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +27,8 @@ jobs:
           mkdir -p www
           cp index.html www/
           cp -r adhan www/
+          sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
+          grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
 
       - name: Install Capacitor and plugins
         run: npm install
@@ -297,6 +301,7 @@ jobs:
                           .setSilent(true)
                           .setCategory(NotificationCompat.CATEGORY_SERVICE)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                  if (color != null && color.length() == 7 && color.charAt(0) == '#') b.setColorized(true);
                   if (nx != null && full && Build.VERSION.SDK_INT >= 24) {
                       b.setUsesChronometer(true).setChronometerCountDown(true).setWhen(at).setShowWhen(true);
                       b.setContentText("متبقي على الأذان");
@@ -327,6 +332,12 @@ jobs:
           import com.getcapacitor.PluginCall;
           import com.getcapacitor.PluginMethod;
           import com.getcapacitor.annotation.CapacitorPlugin;
+          import androidx.core.content.FileProvider;
+          import java.io.File;
+          import java.io.FileOutputStream;
+          import java.io.InputStream;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
 
           @CapacitorPlugin(name = "AdhanNotifier")
           public class AdhanNotifierPlugin extends Plugin {
@@ -368,6 +379,35 @@ jobs:
                   i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                   getContext().startActivity(i);
                   call.resolve();
+              }
+
+              @PluginMethod
+              public void installUpdate(PluginCall call) {
+                  String url = call.getString("url", "");
+                  new Thread(() -> {
+                      try {
+                          HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+                          c.setInstanceFollowRedirects(true);
+                          c.connect();
+                          File dir = new File(getContext().getCacheDir(), "updates");
+                          dir.mkdirs();
+                          File f = new File(dir, "update.apk");
+                          try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(f)) {
+                              byte[] buf = new byte[8192];
+                              int r;
+                              while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
+                          }
+                          c.disconnect();
+                          Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f);
+                          Intent i = new Intent(Intent.ACTION_VIEW);
+                          i.setDataAndType(uri, "application/vnd.android.package-archive");
+                          i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                          getContext().startActivity(i);
+                          call.resolve();
+                      } catch (Exception e) {
+                          call.reject("update failed: " + e.getMessage());
+                      }
+                  }).start();
               }
           }
           JAVA
@@ -600,9 +640,9 @@ jobs:
           python3 - <<'PY'
           p = "android/app/src/main/AndroidManifest.xml"
           s = open(p, encoding="utf-8").read()
-          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />'
+          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
           svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown" /></service>'
-          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter></receiver>'
+          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
           if "AdhanService" not in s:
               assert "<application" in s and "</application>" in s, "manifest has no application tag"
               s = s.replace("<application", perms + "<application", 1)
@@ -611,6 +651,17 @@ jobs:
           print("AdhanService in manifest:", "AdhanService" in s)
           PY
           echo "Native setup done"
+
+      - name: Support files for in-app updates
+        run: |
+          RES=android/app/src/main/res
+          mkdir -p $RES/xml
+          cat > $RES/xml/file_paths.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths><cache-path name="updates" path="updates/" /></paths>
+          XML
+          sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
+          grep -n "versionCode" android/app/build.gradle
 
       - name: Copy adhan sounds for notifications
         run: |
@@ -622,6 +673,18 @@ jobs:
           cp adhan/cairo-albanna.mp3 $RAW/adhan_albanna.mp3
           cp adhan/mnshawi.mp3 $RAW/adhan_mnshawi.mp3
 
+      - name: Stable signing key (so updates install over the old app)
+        env:
+          KS: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            mkdir -p "$HOME/.android"
+            echo "$KS" | base64 -d > "$HOME/.android/debug.keystore"
+            echo "stable key installed"
+          else
+            echo "no DEBUG_KEYSTORE_B64 secret, using the default key"
+          fi
+
       - name: Build APK
         working-directory: android
         run: |
@@ -632,3 +695,10 @@ jobs:
         with:
           name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish release for in-app updates
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: b${{ github.run_number }}
+          name: زاد المؤمن ${{ github.run_number }}
+          files: android/app/build/outputs/apk/debug/app-debug.apk
