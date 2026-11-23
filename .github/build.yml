@@ -1,0 +1,762 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Prepare web folder
+        run: |
+          mkdir -p www
+          cp index.html www/
+          cp -r adhan www/
+          cp -r alarm www/
+          sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
+          grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
+
+      - name: Install Capacitor and plugins
+        run: npm install
+
+      - name: Create Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Set the home-screen app name
+        run: |
+          python3 - <<'PY'
+          import re
+          p = "android/app/src/main/res/values/strings.xml"
+          s = open(p, encoding="utf-8").read()
+          s2 = re.sub(r'<string name="app_name">.*?</string>', '<string name="app_name">زاد المؤمن</string>', s)
+          s2 = re.sub(r'<string name="title_activity_main">.*?</string>', '<string name="title_activity_main">زاد المؤمن</string>', s2)
+          assert s2 != s or 'زاد المؤمن' in s, "app_name not found"
+          open(p, "w", encoding="utf-8").write(s2)
+          print("app_name set to زاد المؤمن")
+          PY
+
+      - name: App icon (زاد المؤمن)
+        run: |
+          RES=android/app/src/main/res
+          mkdir -p "$RES/drawable" "$RES/mipmap-anydpi-v26"
+          cat > "$RES/drawable/ic_launcher_background.xml" <<'XML'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:fillColor="#1C3F7A" android:pathData="M0,0h108v108h-108z"/>
+          </vector>
+          XML
+          cat > "$RES/drawable/ic_launcher_foreground.xml" <<'XML'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+            <path android:fillColor="#F6C945" android:pathData="M54.0,22.0L61.3,36.4L76.6,31.4L71.6,46.7L86.0,54.0L71.6,61.3L76.6,76.6L61.3,71.6L54.0,86.0L46.7,71.6L31.4,76.6L36.4,61.3L22.0,54.0L36.4,46.7L31.4,31.4L46.7,36.4Z"/>
+            <path android:fillColor="#FFF7E0" android:pathData="M54,41a13,13 0 1,0 0,26a13,13 0 1,0 0,-26z"/>
+            <path android:fillColor="#B5443F" android:pathData="M54,48a6,6 0 1,0 0,12a6,6 0 1,0 0,-12z"/>
+          </vector>
+          XML
+          for N in ic_launcher ic_launcher_round; do
+            cat > "$RES/mipmap-anydpi-v26/$N.xml" <<'XML'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="@drawable/ic_launcher_background"/>
+            <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
+          XML
+          done
+
+      - name: Replace splash screen with the app icon artwork
+        run: |
+          RES=android/app/src/main/res
+          if [ ! -f icon/splash.png ] || [ ! -f icon/splash-land.png ]; then
+            echo "::warning::icon/splash.png or icon/splash-land.png is missing in the repo; keeping the default splash"
+            exit 0
+          fi
+          find "$RES" -name 'splash.png' | while read F; do
+            case "$F" in
+              *land*) cp icon/splash-land.png "$F" ;;
+              *) cp icon/splash.png "$F" ;;
+            esac
+          done
+          echo "splash files replaced:"; find "$RES" -name 'splash.png' | wc -l
+
+      - name: Use the new app icon artwork
+        run: |
+          RES=android/app/src/main/res
+          mkdir -p "$RES/drawable-nodpi" "$RES/mipmap-xxxhdpi" "$RES/mipmap-anydpi-v26"
+          cp icon/launcher-bg.png "$RES/drawable-nodpi/ic_launcher_bg_art.png"
+          cp icon/launcher-fg-empty.png "$RES/drawable-nodpi/ic_launcher_fg_empty.png"
+          cp icon/launcher-192.png "$RES/mipmap-xxxhdpi/ic_launcher.png"
+          cp icon/launcher-192.png "$RES/mipmap-xxxhdpi/ic_launcher_round.png"
+          for N in ic_launcher ic_launcher_round; do
+            cat > "$RES/mipmap-anydpi-v26/$N.xml" <<'XML'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="@drawable/ic_launcher_bg_art"/>
+            <foreground android:drawable="@drawable/ic_launcher_fg_empty"/>
+          </adaptive-icon>
+          XML
+          done
+
+      - name: Add persistent notification and background settings
+        run: |
+          MAIN=$(find android -name MainActivity.java | head -n 1)
+          PKG=$(grep -m1 '^package ' "$MAIN" | sed 's/package //; s/;//; s/ //g')
+          DIR=$(dirname "$MAIN")
+
+          # Small white crescent icon for the status bar (replaces the "!" placeholder)
+          RES=android/app/src/main/res
+          mkdir -p "$RES/drawable"
+          cat > "$RES/drawable/ic_stat_prayer.xml" <<'XML'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+            <path android:fillColor="#FFFFFFFF" android:pathData="M13,3a9,9 0 1,0 8,13A7,7 0 0,1 13,3z"/>
+          </vector>
+          XML
+
+          cat > "$DIR/AdhanService.java" <<'JAVA'
+          package __PKG__;
+
+          import android.app.Notification;
+          import android.app.PendingIntent;
+          import android.graphics.BitmapFactory;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.app.Service;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.pm.ServiceInfo;
+          import android.os.Build;
+          import android.os.Handler;
+          import android.os.IBinder;
+          import android.os.Looper;
+              import android.speech.tts.TextToSpeech;
+              import java.util.Locale;
+          import androidx.core.app.NotificationCompat;
+          import android.os.SystemClock;
+          import android.widget.RemoteViews;
+
+          public class AdhanService extends Service {
+              private static final String CH = "prayer_bar";
+              private static final String CH_MIN = "prayer_min";
+              private static final int NID = 4242;
+              private TextToSpeech tts;
+              private boolean ttsReady = false;
+              private long lastSal = 0;
+
+              @Override
+              public void onCreate() {
+                  super.onCreate();
+                  lastSal = System.currentTimeMillis();
+                  tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+                      @Override
+                      public void onInit(int status) {
+                          if (status == TextToSpeech.SUCCESS && tts != null) {
+                              tts.setLanguage(new Locale("ar"));
+                              ttsReady = true;
+                          }
+                      }
+                  });
+              }
+
+              private void checkSalawat() {
+                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("sal", "");
+                  if (raw == null || raw.isEmpty()) return;
+                  long now = System.currentTimeMillis();
+                  for (String item : raw.split(";")) {
+                      try {
+                          long at = Long.parseLong(item);
+                          if (at > lastSal && at <= now && now - at < 60000) {
+                              lastSal = at;
+                              if (ttsReady && tts != null) tts.speak("صل على النبي", TextToSpeech.QUEUE_FLUSH, null, "sal" + at);
+                              return;
+                          }
+                      } catch (NumberFormatException e) {
+                      }
+                  }
+              }
+              private final Handler handler = new Handler(Looper.getMainLooper());
+              private final Runnable ticker = new Runnable() {
+                  @Override
+                  public void run() {
+                      refresh();
+                      handler.postDelayed(this, 30000);
+                  }
+              };
+
+              @Override
+              public IBinder onBind(Intent intent) {
+                  return null;
+              }
+
+              @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                  if (Build.VERSION.SDK_INT >= 26) {
+                      nm.deleteNotificationChannel("prayer_status");
+                      nm.deleteNotificationChannel("prayer_next2");
+                      NotificationChannel ch = new NotificationChannel(CH, "الصلاة القادمة", NotificationManager.IMPORTANCE_LOW);
+                      ch.setShowBadge(false);
+                      ch.setSound(null, null);
+                      ch.enableVibration(false);
+                      nm.createNotificationChannel(ch);
+                      NotificationChannel chm = new NotificationChannel(CH_MIN, "الصلاة القادمة (مخفي)", NotificationManager.IMPORTANCE_MIN);
+                      chm.setShowBadge(false);
+                      chm.setSound(null, null);
+                      chm.enableVibration(false);
+                      nm.createNotificationChannel(chm);
+                  }
+                  Notification n = build();
+                  if (Build.VERSION.SDK_INT >= 34) {
+                      startForeground(NID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+                  } else {
+                      startForeground(NID, n);
+                  }
+                  handler.removeCallbacks(ticker);
+                  handler.post(ticker);
+                  return START_STICKY;
+              }
+
+              @Override
+              public void onDestroy() {
+                  handler.removeCallbacks(ticker);
+                  if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
+                  super.onDestroy();
+              }
+
+              private void refresh() {
+                  NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                  nm.notify(NID, build());
+                  checkSalawat();
+              }
+
+              private Object[] nextPrayer() {
+                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("times", "");
+                  if (raw == null || raw.isEmpty()) return null;
+                  long now = System.currentTimeMillis();
+                  long bestAt = Long.MAX_VALUE;
+                  String bestName = "";
+                  for (String item : raw.split(";")) {
+                      int bar = item.indexOf('|');
+                      if (bar < 0) continue;
+                      try {
+                          long at = Long.parseLong(item.substring(0, bar));
+                          if (at > now && at < bestAt) {
+                              bestAt = at;
+                              bestName = item.substring(bar + 1);
+                          }
+                      } catch (NumberFormatException e) {
+                      }
+                  }
+                  if (bestAt == Long.MAX_VALUE) return null;
+                  return new Object[] { bestName, bestAt };
+              }
+
+              private int colorOf(String c) {
+                  try {
+                      if (c != null && c.length() == 7 && c.charAt(0) == '#') return (int) (0xFF000000L | Long.parseLong(c.substring(1), 16));
+                  } catch (NumberFormatException e) {
+                  }
+                  return 0xFFF6C945;
+              }
+
+              private Notification build() {
+                  Object[] nx = nextPrayer();
+                  android.content.SharedPreferences sp = getSharedPreferences("adhan", MODE_PRIVATE);
+                  String style = sp.getString("nstyle", "full");
+                  String pos = sp.getString("npos", "bar");
+                  String color = sp.getString("ncolor", "");
+                  boolean full = !"short".equals(style);
+                  String title = "زاد المؤمن";
+                  String text = "افتح التطبيق عشان المواقيت تتحدّث";
+                  long at = 0;
+                  if (nx != null) {
+                      at = (Long) nx[1];
+                      long mins = Math.max(0, (at - System.currentTimeMillis()) / 60000L);
+                      long h = mins / 60L;
+                      long m = mins % 60L;
+                      if (full) {
+                          title = "الصلاة القادمة: " + nx[0];
+                          text = "متبقي " + (h > 0 ? h + " س " + m + " د" : m + " د");
+                      } else {
+                          title = String.valueOf(nx[0]);
+                          text = "الصلاة القادمة";
+                      }
+                  }
+                  NotificationCompat.Builder b = new NotificationCompat.Builder(this, "hidden".equals(pos) ? CH_MIN : CH)
+                          .setSmallIcon(R.drawable.ic_stat_prayer)
+                          .setColor(colorOf(color))
+                          .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_bg_art))
+                          .setContentTitle(title)
+                          .setContentText(text)
+                          .setOngoing(true)
+                          .setOnlyAlertOnce(true)
+                          .setSilent(true)
+                          .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                  if (color != null && color.length() == 7 && color.charAt(0) == '#') b.setColorized(true);
+                  if (nx != null && full && Build.VERSION.SDK_INT >= 24) {
+                      RemoteViews rv = new RemoteViews(getPackageName(), R.layout.pn_custom);
+                      rv.setTextViewText(R.id.pn_name, String.valueOf(nx[0]));
+                      rv.setChronometerCountDown(R.id.pn_time, true);
+                      rv.setChronometer(R.id.pn_time, SystemClock.elapsedRealtime() + (at - System.currentTimeMillis()), null, true);
+                      b.setCustomContentView(rv).setCustomBigContentView(rv);
+                      b.setShowWhen(false);
+                  } else {
+                      b.setShowWhen(false);
+                  }
+                  Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                  if (launch != null) {
+                      launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                      int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                      if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
+                      b.setContentIntent(PendingIntent.getActivity(this, 0, launch, flags));
+                  }
+                  return b.build();
+              }
+          }
+          JAVA
+
+          cat > "$DIR/AdhanNotifierPlugin.java" <<'JAVA'
+          package __PKG__;
+
+          import android.content.Context;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.provider.Settings;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          import androidx.core.content.FileProvider;
+          import java.io.File;
+          import java.io.FileOutputStream;
+          import java.io.InputStream;
+          import java.net.HttpURLConnection;
+          import java.net.URL;
+
+          @CapacitorPlugin(name = "AdhanNotifier")
+          public class AdhanNotifierPlugin extends Plugin {
+
+              @PluginMethod
+              public void update(PluginCall call) {
+                  String times = call.getString("times", "");
+                  String sal = call.getString("sal", "");
+                  String nstyle = call.getString("style", "full");
+                  String npos = call.getString("pos", "bar");
+                  String ncolor = call.getString("color", "");
+                  getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit().putString("times", times).putString("sal", sal).putString("nstyle", nstyle).putString("npos", npos).putString("ncolor", ncolor).apply();
+                  Intent i = new Intent(getContext(), AdhanService.class);
+                  if (Build.VERSION.SDK_INT >= 26) {
+                      getContext().startForegroundService(i);
+                  } else {
+                      getContext().startService(i);
+                  }
+                  call.resolve();
+              }
+
+              @PluginMethod
+              public void stop(PluginCall call) {
+                  getContext().stopService(new Intent(getContext(), AdhanService.class));
+                  call.resolve();
+              }
+
+              @PluginMethod
+              public void openBattery(PluginCall call) {
+                  Intent i = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                  i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                  getContext().startActivity(i);
+                  call.resolve();
+              }
+
+              @PluginMethod
+              public void openAppSettings(PluginCall call) {
+                  Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getContext().getPackageName()));
+                  i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                  getContext().startActivity(i);
+                  call.resolve();
+              }
+
+              @PluginMethod
+              public void installUpdate(PluginCall call) {
+                  String url = call.getString("url", "");
+                  new Thread(() -> {
+                      try {
+                          HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+                          c.setInstanceFollowRedirects(true);
+                          c.connect();
+                          File dir = new File(getContext().getCacheDir(), "updates");
+                          dir.mkdirs();
+                          File f = new File(dir, "update.apk");
+                          try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(f)) {
+                              byte[] buf = new byte[8192];
+                              int r;
+                              while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
+                          }
+                          c.disconnect();
+                          Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f);
+                          Intent i = new Intent(Intent.ACTION_VIEW);
+                          i.setDataAndType(uri, "application/vnd.android.package-archive");
+                          i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                          getContext().startActivity(i);
+                          call.resolve();
+                      } catch (Exception e) {
+                          call.reject("update failed: " + e.getMessage());
+                      }
+                  }).start();
+              }
+          }
+          JAVA
+
+          cat > "$DIR/FloatPlugin.java" <<'JAVA'
+          package __PKG__;
+
+          import android.app.AlarmManager;
+          import android.app.PendingIntent;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.provider.Settings;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+
+          @CapacitorPlugin(name = "FloatOverlay")
+          public class FloatPlugin extends Plugin {
+
+              @PluginMethod
+              public void can(PluginCall call) {
+                  JSObject r = new JSObject();
+                  boolean ok = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(getContext());
+                  r.put("granted", ok);
+                  call.resolve(r);
+              }
+
+              @PluginMethod
+              public void request(PluginCall call) {
+                  Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getContext().getPackageName()));
+                  i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                  getContext().startActivity(i);
+                  call.resolve();
+              }
+
+              @PluginMethod
+              public void set(PluginCall call) {
+                  boolean enabled = call.getBoolean("enabled", false);
+                  int everyMin = call.getInt("everyMin", 60);
+                  String texts = call.getString("texts", "[]");
+                  Context ctx = getContext();
+                  ctx.getSharedPreferences("float", Context.MODE_PRIVATE).edit().putString("texts", texts).putBoolean("enabled", enabled).putInt("everyMin", everyMin).apply();
+                  AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                  Intent i = new Intent(ctx, FloatReceiver.class);
+                  PendingIntent pi = PendingIntent.getBroadcast(ctx, 4401, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  am.cancel(pi);
+                  boolean allowed = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(ctx);
+                  if (enabled && allowed) {
+                      long interval = everyMin * 60000L;
+                      am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + interval, interval, pi);
+                  }
+                  call.resolve();
+              }
+          }
+          JAVA
+
+          cat > "$DIR/FloatReceiver.java" <<'JAVA'
+          package __PKG__;
+
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.graphics.PixelFormat;
+          import android.graphics.drawable.GradientDrawable;
+          import android.os.Build;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.provider.Settings;
+          import android.util.TypedValue;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.WindowManager;
+          import android.widget.FrameLayout;
+          import android.widget.ImageView;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import org.json.JSONArray;
+          import java.util.Random;
+
+          public class FloatReceiver extends BroadcastReceiver {
+
+              @Override
+              public void onReceive(Context ctx, Intent intent) {
+                  if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(ctx)) return;
+                  String text = "سبحان الله وبحمده";
+                  try {
+                      String raw = ctx.getSharedPreferences("float", Context.MODE_PRIVATE).getString("texts", "[]");
+                      JSONArray arr = new JSONArray(raw);
+                      if (arr.length() > 0) text = arr.getString(new Random().nextInt(arr.length()));
+                  } catch (Exception e) {
+                      // keep the default text
+                  }
+                  show(ctx, text);
+              }
+
+              private int dp(Context ctx, int v) {
+                  return (int) (v * ctx.getResources().getDisplayMetrics().density + 0.5f);
+              }
+
+              private void show(final Context ctx, String text) {
+                  final WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+
+                  LinearLayout box = new LinearLayout(ctx);
+                  box.setOrientation(LinearLayout.VERTICAL);
+                  box.setPadding(dp(ctx, 18), dp(ctx, 14), dp(ctx, 18), dp(ctx, 16));
+                  GradientDrawable bg = new GradientDrawable();
+                  bg.setColor(Color.parseColor("#F20B2550"));
+                  bg.setCornerRadius(dp(ctx, 22));
+                  bg.setStroke(dp(ctx, 2), Color.parseColor("#F6C945"));
+                  box.setBackground(bg);
+
+                  LinearLayout head = new LinearLayout(ctx);
+                  head.setOrientation(LinearLayout.HORIZONTAL);
+                  head.setGravity(Gravity.CENTER_VERTICAL);
+                  ImageView icon = new ImageView(ctx);
+                  icon.setImageResource(R.mipmap.ic_launcher);
+                  head.addView(icon, new LinearLayout.LayoutParams(dp(ctx, 36), dp(ctx, 36)));
+                  TextView title = new TextView(ctx);
+                  title.setText("زاد المؤمن");
+                  title.setTextColor(Color.parseColor("#F6C945"));
+                  title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+                  title.setPadding(dp(ctx, 10), 0, 0, 0);
+                  head.addView(title);
+                  box.addView(head);
+
+                  TextView body = new TextView(ctx);
+                  body.setText(text);
+                  body.setTextColor(Color.WHITE);
+                  body.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+                  body.setGravity(Gravity.CENTER);
+                  body.setLineSpacing(dp(ctx, 3), 1f);
+                  body.setPadding(0, dp(ctx, 10), 0, 0);
+                  box.addView(body);
+
+                  final FrameLayout root = new FrameLayout(ctx);
+                  root.setPadding(dp(ctx, 16), 0, dp(ctx, 16), 0);
+                  root.addView(box, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT));
+
+                  int type = Build.VERSION.SDK_INT >= 26 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
+                  WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                          WindowManager.LayoutParams.MATCH_PARENT,
+                          WindowManager.LayoutParams.WRAP_CONTENT,
+                          type,
+                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                          PixelFormat.TRANSLUCENT);
+                  lp.gravity = Gravity.TOP;
+                  lp.y = dp(ctx, 48);
+
+                  final Handler handler = new Handler(Looper.getMainLooper());
+                  final Runnable close = new Runnable() {
+                      @Override
+                      public void run() {
+                          try { wm.removeView(root); } catch (Exception e) { }
+                      }
+                  };
+                  root.setOnClickListener(new View.OnClickListener() {
+                      @Override
+                      public void onClick(View v) {
+                          handler.removeCallbacks(close);
+                          close.run();
+                      }
+                  });
+                  try {
+                      wm.addView(root, lp);
+                      handler.postDelayed(close, 12000);
+                  } catch (Exception e) {
+                      // overlay permission missing: nothing to show
+                  }
+              }
+          }
+          JAVA
+
+          cat > "$DIR/BootReceiver.java" <<'JAVA'
+          package __PKG__;
+
+          import android.app.AlarmManager;
+          import android.app.PendingIntent;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.os.Build;
+          import android.provider.Settings;
+
+          public class BootReceiver extends BroadcastReceiver {
+
+              @Override
+              public void onReceive(Context ctx, Intent intent) {
+                  String action = intent.getAction();
+                  if (!"android.intent.action.BOOT_COMPLETED".equals(action)) return;
+                  SharedPreferences sp = ctx.getSharedPreferences("float", Context.MODE_PRIVATE);
+                  if (!sp.getBoolean("enabled", false)) return;
+                  if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(ctx)) return;
+                  int everyMin = sp.getInt("everyMin", 60);
+                  long interval = everyMin * 60000L;
+                  AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                  PendingIntent pi = PendingIntent.getBroadcast(ctx, 4401, new Intent(ctx, FloatReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                  am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + interval, interval, pi);
+              }
+          }
+          JAVA
+
+          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
+
+          # Write MainActivity ourselves: registers the plugin before the bridge starts
+          cat > "$MAIN" <<'JAVA'
+          package __PKG__;
+
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(AdhanNotifierPlugin.class);
+                  registerPlugin(FloatPlugin.class);
+                  super.onCreate(savedInstanceState);
+                  getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+              }
+          }
+          JAVA
+          sed -i "s/__PKG__/$PKG/g" "$MAIN"
+
+          # Permissions and the service entry in the manifest (edited with Python, fails loudly if it can't)
+          python3 - <<'PY'
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown" /></service>'
+          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
+          if "AdhanService" not in s:
+              assert "<application" in s and "</application>" in s, "manifest has no application tag"
+              s = s.replace("<application", perms + "<application", 1)
+              s = s.replace("</application>", svc + rcv + "</application>", 1)
+              open(p, "w", encoding="utf-8").write(s)
+          print("AdhanService in manifest:", "AdhanService" in s)
+          PY
+          echo "Native setup done"
+
+      - name: Support files for in-app updates
+        run: |
+          RES=android/app/src/main/res
+          mkdir -p $RES/xml $RES/layout
+          cat > $RES/xml/file_paths.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths><cache-path name="updates" path="updates/" /></paths>
+          XML
+          cat > $RES/layout/pn_custom.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="horizontal"
+              android:gravity="center_vertical"
+              android:paddingStart="16dp"
+              android:paddingEnd="16dp"
+              android:paddingTop="12dp"
+              android:paddingBottom="12dp">
+              <ImageView
+                  android:layout_width="40dp"
+                  android:layout_height="40dp"
+                  android:src="@drawable/ic_launcher_bg_art"
+                  android:scaleType="centerInside" />
+              <LinearLayout
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:orientation="vertical"
+                  android:paddingStart="12dp">
+                  <TextView
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="الصلاة القادمة"
+                      android:textColor="#FFFFFFFF"
+                      android:alpha="0.85"
+                      android:textSize="13sp" />
+                  <TextView
+                      android:id="@+id/pn_name"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:textColor="#FFFFFFFF"
+                      android:textStyle="bold"
+                      android:textSize="22sp" />
+              </LinearLayout>
+              <Chronometer
+                  android:id="@+id/pn_time"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:textColor="#FFFFFFFF"
+                  android:textStyle="bold"
+                  android:textSize="30sp" />
+          </LinearLayout>
+          XML
+          sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
+          grep -n "versionCode" android/app/build.gradle
+
+      - name: Copy adhan sounds for notifications
+        run: |
+          RAW=android/app/src/main/res/raw
+          mkdir -p $RAW
+          cp adhan/makkah-1.mp3 $RAW/adhan_makkah1.mp3
+          cp adhan/makkah-2.mp3 $RAW/adhan_makkah2.mp3
+          cp adhan/cairo-refaat.mp3 $RAW/adhan_refaat.mp3
+          cp adhan/cairo-albanna.mp3 $RAW/adhan_albanna.mp3
+          cp adhan/mnshawi.mp3 $RAW/adhan_mnshawi.mp3
+          cp tones/adhkar-morning.mp3 $RAW/adhkar_morning.mp3
+          cp tones/adhkar-evening.mp3 $RAW/adhkar_evening.mp3
+          cp tones/salawat.mp3 $RAW/salawat.mp3
+          cp tones/qiyam.mp3 $RAW/qiyam.mp3
+          cp alarm/fajr-amer-atayah.mp3 $RAW/alarm_fajr.mp3
+
+      - name: Stable signing key (so updates install over the old app)
+        env:
+          KS: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            mkdir -p "$HOME/.android"
+            echo "$KS" | base64 -d > "$HOME/.android/debug.keystore"
+            echo "stable key installed"
+          else
+            echo "no DEBUG_KEYSTORE_B64 secret, using the default key"
+          fi
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish release for in-app updates
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: b${{ github.run_number }}
+          name: زاد المؤمن ${{ github.run_number }}
+          files: android/app/build/outputs/apk/debug/app-debug.apk
