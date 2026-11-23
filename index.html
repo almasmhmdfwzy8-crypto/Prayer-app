@@ -927,6 +927,9 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
 #view-mushaf .mq-text { font-weight: 700; color: var(--ink); text-shadow: none; }
 #view-mushaf .m-par { text-align-last: start; }
 #view-mushaf .mq-juzmark { display: none; }
+/* ---------- v65: tasbeeh settings panel ---------- */
+#tasbeeh .tz-set { margin: 0 12px 8px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+#tasbeeh .tz-set .h { margin: 0 0 6px; font-size: 1rem; }
 /* ---------- v57: update banner ---------- */
 .upd-banner { position: fixed; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); z-index: 95; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: var(--shadow); }
 .upd-go { border: 0; border-radius: 10px; padding: 6px 14px; background: var(--gold); color: var(--gold-ink); font: inherit; font-weight: 800; cursor: pointer; }
@@ -1210,10 +1213,7 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
       <span class="lbl">وقت القيام</span>
       <input class="field" type="time" id="qiyamTime" value="22:00" aria-label="وقت تذكير قيام الليل">
     </div>
-    <div class="row" style="margin-bottom:12px">
-      <span class="lbl">نغمة قيام الليل</span>
-      <select class="field" id="qiyamTone" aria-label="نغمة قيام الليل"></select>
-    </div>
+
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تنبيه الفجر بصوت وأسئلة (يصحّيك)</span>
       <label class="switch">
@@ -1239,13 +1239,26 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
       </label>
     </div>
     <div class="row" style="margin-bottom:12px">
+      <span class="lbl">تذكير أذكار الصباح</span>
+      <label class="switch"><input type="checkbox" id="morningRemOn" aria-label="تذكير أذكار الصباح"><span></span></label>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <span class="lbl">وقت أذكار الصباح</span>
+      <input class="field" type="time" id="morningRemTime" value="06:30" aria-label="وقت أذكار الصباح">
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <span class="lbl">تذكير أذكار المساء</span>
+      <label class="switch"><input type="checkbox" id="eveningRemOn" aria-label="تذكير أذكار المساء"><span></span></label>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <span class="lbl">وقت أذكار المساء</span>
+      <input class="field" type="time" id="eveningRemTime" value="17:00" aria-label="وقت أذكار المساء">
+    </div>
+    <div class="row" style="margin-bottom:12px">
       <span class="lbl">بعد الصلاة بـ (دقيقة)</span>
       <input class="field" type="number" min="1" max="60" id="postMin" value="10" aria-label="عدد الدقايق بعد الصلاة">
     </div>
-    <div class="row" style="margin-bottom:12px">
-      <span class="lbl">نغمة أذكار ما بعد الصلاة</span>
-      <select class="field" id="postTone" aria-label="نغمة أذكار ما بعد الصلاة"></select>
-    </div>
+
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تذكير بدعاء</span>
       <label class="switch">
@@ -1286,10 +1299,6 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
         <option value="45">كل ٤٥ دقيقة</option>
         <option value="60">كل ساعة</option>
       </select>
-    </div>
-    <div class="row" style="margin-bottom:12px">
-      <span class="lbl">نغمة الصلاة على النبي</span>
-      <select class="field" id="salTone" aria-label="نغمة الصلاة على النبي"></select>
     </div>
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تذكير صلاة الضحى</span>
@@ -1419,15 +1428,10 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
     <p class="muted" style="margin-top:10px">لو ميعاد صلاة في البلد عندك مختلف عن التطبيق، زوّد أو قلّل الدقايق دي. الحساب فلكي وممكن يختلف عن الهيئة الرسمية.</p>
   </section>
 
-  <section class="card" data-sg="general">
+  <section class="card" data-sg="alerts">
     <h2 class="h">تذكيرات السور والأذكار</h2>
     <div class="row" style="margin-bottom:12px"><span class="lbl">سورة الكهف يوم الجمعة (٩ صباحاً)</span><label class="switch"><input type="checkbox" id="kahfOn" aria-label="تذكير سورة الكهف يوم الجمعة"><span></span></label></div>
     <div class="row"><span class="lbl">سورة الملك وآية الكرسي قبل النوم (٩:٣٠ مساءً)</span><label class="switch"><input type="checkbox" id="mulkOn" aria-label="تذكير سورة الملك قبل النوم"><span></span></label></div>
-  </section>
-  <section class="card" data-sg="general">
-    <h2 class="h">الاهتزاز</h2>
-    <p class="muted" style="margin-bottom:10px">اهتزاز مع كل تسبيحة في المسبحة.</p>
-    <div class="chips-grid" id="haptSet"><button class="chip-btn" data-v="off" type="button">إيقاف</button><button class="chip-btn" data-v="light" type="button">خفيف</button><button class="chip-btn" data-v="strong" type="button">قوي</button></div>
   </section>
   <section class="card" data-sg="general">
     <h2 class="h">نسخ احتياطي</h2>
@@ -1527,7 +1531,13 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
     <button class="iconbtn" id="tzClose" type="button" aria-label="إغلاق المسبحة">✕</button>
     <button class="tz-pick" id="tzPick" type="button" aria-expanded="false" aria-controls="tzPresets"><span id="tzPickName">اختر الذكر</span><span class="tz-arrow" aria-hidden="true">▼</span></button>
     <span class="tz-title" id="tzTitle" hidden>المسبحة</span>
+    <button class="iconbtn" id="tzGear" type="button" aria-label="إعدادات المسبحة" aria-expanded="false" aria-controls="tzSet">⚙</button>
     <button class="iconbtn" id="tzReset" type="button" aria-label="تصفير العداد">↺</button>
+  </div>
+  <div class="tz-set" id="tzSet" hidden>
+    <h2 class="h">اهتزاز المسبحة</h2>
+    <p class="muted" style="margin-bottom:10px">اهتزاز مع كل تسبيحة.</p>
+    <div class="chips-grid" id="haptSet"><button class="chip-btn" data-v="off" type="button">إيقاف</button><button class="chip-btn" data-v="light" type="button">خفيف</button><button class="chip-btn" data-v="strong" type="button">قوي</button></div>
   </div>
   <div class="tz-targets" role="group" aria-label="الذكر" id="tzPresets" hidden></div>
   <div class="tz-targets" role="group" aria-label="الهدف" id="tzTargets"></div>
@@ -1759,7 +1769,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
 
   // ---------- Saved state ----------
   var KEY = "prayer-pro-v3";
-  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, salTone: "t-salawat", qiyamTone: "t-qiyam", postTone: "t-adhkar-auto", autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
+  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, salTone: "t-salawat", morningRemOn: false, morningRemTime: "06:30", eveningRemOn: false, eveningRemTime: "17:00", autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -1799,8 +1809,10 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (s && s.adhanPer && typeof s.adhanPer === "object") ["fajr", "dhuhr", "asr", "maghrib", "isha"].forEach(function (k) { if (typeof s.adhanPer[k] === "boolean") state.adhanPer[k] = s.adhanPer[k]; });
       if (s && typeof s.postOn === "boolean") state.postOn = s.postOn;
       if (s && typeof s.salTone === "string") state.salTone = s.salTone;
-      if (s && typeof s.qiyamTone === "string") state.qiyamTone = s.qiyamTone;
-      if (s && typeof s.postTone === "string") state.postTone = s.postTone;
+      if (s && typeof s.morningRemOn === "boolean") state.morningRemOn = s.morningRemOn;
+      if (s && /^\d{2}:\d{2}$/.test(s.morningRemTime || "")) state.morningRemTime = s.morningRemTime;
+      if (s && typeof s.eveningRemOn === "boolean") state.eveningRemOn = s.eveningRemOn;
+      if (s && /^\d{2}:\d{2}$/.test(s.eveningRemTime || "")) state.eveningRemTime = s.eveningRemTime;
       if (s && typeof s.postMin === "number" && s.postMin >= 1 && s.postMin <= 60) state.postMin = s.postMin;
       if (s && typeof s.autoNight === "boolean") state.autoNight = s.autoNight;
       if (s && typeof s.duaOn === "boolean") state.duaOn = s.duaOn;
@@ -2594,8 +2606,9 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     { id: "b-refaat", name: "أذان القاهرة - محمد رفعت", src: "adhan/cairo-refaat.mp3", builtin: true },
     { id: "b-albanna", name: "أذان القاهرة - محمد علي البنا", src: "adhan/cairo-albanna.mp3", builtin: true },
     { id: "b-mnshawi", name: "أذان الشيخ المنشاوي", src: "adhan/mnshawi.mp3", builtin: true },
-    { id: "alarm-classic", name: "منبّه كلاسيك", src: "alarm/beep-classic.mp3", builtin: true, alarm: true },
-    { id: "alarm-pulse", name: "منبّه متقطّع", src: "alarm/beep-pulse.mp3", builtin: true, alarm: true }
+    { id: "alarm-amer", name: "منبّه عامر عطايا", src: "alarm/fajr-amer-atayah.mp3", builtin: true, alarm: true },
+    { id: "alarm-khalil", name: "منبّه أحمد خليل", src: "alarm/fajr-ahmed-khalil.mp3", builtin: true, alarm: true },
+    { id: "alarm-sarihi", name: "منبّه عبد المجيد السريحي", src: "alarm/fajr-sarihi.mp3", builtin: true, alarm: true }
   ];
   var sounds = [];            // { id, name, blob }
   var urlCache = {};          // id -> object URL
@@ -2773,6 +2786,14 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     document.documentElement.style.setProperty("--tabs-h", "calc(" + t + "px + env(safe-area-inset-bottom, 0px))");
   }
   window.addEventListener("resize", function () { if (!views.tasbeeh.hidden) sizeTasbeeh(); });
+  (function () {
+    var g = document.getElementById("tzGear"), panel = document.getElementById("tzSet");
+    g.addEventListener("click", function () {
+      var open = panel.hidden;
+      panel.hidden = !open;
+      g.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  })();
 
   function renderTz() {
     document.getElementById("tzTitle").textContent = tz.name || "المسبحة";
@@ -2910,7 +2931,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     sel.addEventListener("change", function () { state[key] = sel.value; save(); playTone(sel.value); });
   }
   function speakSal() {
-    playTone(state.salTone);
+    playTone("t-salawat");
     return;
     try {
       if (!("speechSynthesis" in window)) return;
@@ -3012,7 +3033,6 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
         if (mins >= state.postMin && mins < state.postMin + 1 && !fired[kPost]) {
           fired[kPost] = true;
           notify("افتح أذكار ما بعد الصلاة", postBody(p.k));
-          playTone(state.postTone);
         }
       });
     }
@@ -3100,7 +3120,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (hm === state.qiyamTime && !fired[kQ]) {
         fired[kQ] = true;
         notify("قيام الليل", "﴿تَتَجَافَىٰ جُنُوبُهُمْ عَنِ الْمَضَاجِعِ يَدْعُونَ رَبَّهُمْ خَوْفًا وَطَمَعًا﴾ السجدة: 16");
-        playTone(state.qiyamTone);
+        playTone("t-qiyam");
       }
     }
 
@@ -3385,9 +3405,12 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   preOn.addEventListener("change", function () { state.preOn = preOn.checked; save(); if (preOn.checked) askPerm(); });
   qiyamOn.addEventListener("change", function () { state.qiyamOn = qiyamOn.checked; save(); if (qiyamOn.checked) askPerm(); });
   qiyamTime.addEventListener("change", function () { state.qiyamTime = qiyamTime.value || "22:00"; save(); });
-  fillToneSelect(document.getElementById("salTone"), "salTone");
-  fillToneSelect(document.getElementById("qiyamTone"), "qiyamTone");
-  fillToneSelect(document.getElementById("postTone"), "postTone");
+  [["morningRemOn", "morningRemTime", "morningRemOn", "morningRemTime"], ["eveningRemOn", "eveningRemTime", "eveningRemOn", "eveningRemTime"]].forEach(function (k) {
+    var on = document.getElementById(k[0]), tm = document.getElementById(k[1]);
+    on.checked = !!state[k[2]]; tm.value = state[k[3]];
+    on.addEventListener("change", function () { state[k[2]] = on.checked; save(); scheduleSync(); if (on.checked) askPerm(); });
+    tm.addEventListener("change", function () { state[k[3]] = tm.value || state[k[3]]; save(); scheduleSync(); });
+  });
   var postOn = document.getElementById("postOn");
   var postMin = document.getElementById("postMin");
   postOn.checked = state.postOn;
@@ -4034,8 +4057,14 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       NATIVE.createChannel({ id: "adhan_" + k, name: "أذان", importance: 5, sound: ADHAN_FILES[k], vibration: true }).catch(function () {});
     });
     NATIVE.createChannel({ id: "reminders", name: "تذكيرات", importance: 4 }).catch(function () {});
-    NATIVE.createChannel({ id: "wake", name: "تنبيه الفجر", importance: 5, vibration: true }).catch(function () {});
+    NATIVE.createChannel({ id: "adhkar_morning", name: "أذكار الصباح", importance: 4, sound: "adhkar_morning.mp3", vibration: true }).catch(function () {});
+    NATIVE.createChannel({ id: "adhkar_evening", name: "أذكار المساء", importance: 4, sound: "adhkar_evening.mp3", vibration: true }).catch(function () {});
+    NATIVE.createChannel({ id: "salawat", name: "الصلاة على النبي", importance: 4, sound: "salawat.mp3", vibration: true }).catch(function () {});
+    NATIVE.createChannel({ id: "qiyam", name: "قيام الليل", importance: 4, sound: "qiyam.mp3", vibration: true }).catch(function () {});
+    NATIVE.createChannel({ id: "wake_alarm", name: "تنبيه الفجر", importance: 5, sound: "alarm_fajr.mp3", vibration: true }).catch(function () {});
   }
+  // Post-prayer adhkar is a normal notification
+  function postChannel() { return "reminders"; }
   // Turns a Cairo wall-clock time on a given Cairo day into a real timestamp
   function cairoAt(dayKey, hh, mm) {
     var p = dayKey.split("-");
@@ -4060,12 +4089,22 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
         if (!prayerOn(p.i)) return;
         if (state.preOn && p.t - 15 * 60000 > now) list.push({ at: p.t - 15 * 60000, title: "بعد ربع ساعة: صلاة " + p.k, body: "استعد للصلاة واقفل صوت الموبايل", ch: "reminders" });
         if (state.adhanOn && p.t > now) list.push({ at: p.t, title: "حان وقت صلاة " + p.k, body: "الله أكبر", ch: "adhan_" + adhanKey() });
-        if (state.postOn && p.t + state.postMin * 60000 > now) list.push({ at: p.t + state.postMin * 60000, title: "افتح أذكار ما بعد الصلاة", body: postBody(p.k), ch: "reminders" });
+        if (state.postOn && p.t + state.postMin * 60000 > now) list.push({ at: p.t + state.postMin * 60000, title: "افتح أذكار ما بعد الصلاة", body: postBody(p.k), ch: postChannel() });
       });
+      if (state.morningRemOn) {
+        var mr = state.morningRemTime.split(":");
+        var mrAt = cairoAt(dk, +mr[0], +mr[1]);
+        if (mrAt > now) list.push({ at: mrAt, title: "أذكار الصباح", body: "حان وقت أذكار الصباح", ch: "adhkar_morning" });
+      }
+      if (state.eveningRemOn) {
+        var er = state.eveningRemTime.split(":");
+        var erAt = cairoAt(dk, +er[0], +er[1]);
+        if (erAt > now) list.push({ at: erAt, title: "أذكار المساء", body: "حان وقت أذكار المساء", ch: "adhkar_evening" });
+      }
       if (state.qiyamOn) {
         var q = state.qiyamTime.split(":");
         var qAt = cairoAt(dk, +q[0], +q[1]);
-        if (qAt > now) list.push({ at: qAt, title: "قيام الليل", body: "﴿تَتَجَافَىٰ جُنُوبُهُمْ عَنِ الْمَضَاجِعِ يَدْعُونَ رَبَّهُمْ خَوْفًا وَطَمَعًا﴾ السجدة: 16", ch: "reminders" });
+        if (qAt > now) list.push({ at: qAt, title: "قيام الليل", body: "﴿تَتَجَافَىٰ جُنُوبُهُمْ عَنِ الْمَضَاجِعِ يَدْعُونَ رَبَّهُمْ خَوْفًا وَطَمَعًا﴾ السجدة: 16", ch: "qiyam" });
       }
       if (state.friOn && wdFmt.format(dayDate) === "Fri") {
         var fAt = cairoAt(dk, 8, 0);
@@ -4074,7 +4113,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (state.wakeOn && state.wakeDoneDay !== dk) {
         var wt = state.wakeTime.split(":");
         var wAt = cairoAt(dk, +wt[0], +wt[1]);
-        if (wAt > now) list.push({ at: wAt, title: "قوم صلّي الفجر", body: "افتح التطبيق وجاوب على الأسئلة عشان يقفل التنبيه", ch: "wake" });
+        if (wAt > now) list.push({ at: wAt, title: "قوم صلّي الفجر", body: "افتح التطبيق وجاوب على الأسئلة عشان يقفل التنبيه", ch: "wake_alarm" });
       }
       var fastLbl = state.fastOn ? fastLabelFor(new Date(now + (d + 1) * 86400000)) : null;
       if (fastLbl) { var fAt2 = cairoAt(dk, 21, 0); if (fAt2 > now) list.push({ at: fAt2, title: "تذكير بالصيام", body: "بكرة " + fastLbl + ". نوِي الصيام الليلة", ch: "reminders" }); }
@@ -4091,7 +4130,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     if (state.salOn) {
       var SM = state.salMin * 60000, sCount = 0;
       for (var t0 = Math.ceil((now + 1) / SM) * SM; sCount < 150 && t0 < now + 86400000; t0 += SM) {
-        list.push({ at: t0, title: "صلّ على النبي ﷺ", body: "اللهم صلّ وسلّم وبارك على نبينا محمد", ch: "reminders" });
+        list.push({ at: t0, title: "صلّ على النبي ﷺ", body: "اللهم صلّ وسلّم وبارك على نبينا محمد", ch: "salawat" });
         sCount++;
       }
     }
