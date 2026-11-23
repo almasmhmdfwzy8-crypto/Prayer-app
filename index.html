@@ -1211,6 +1211,10 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
       <input class="field" type="time" id="qiyamTime" value="22:00" aria-label="وقت تذكير قيام الليل">
     </div>
     <div class="row" style="margin-bottom:12px">
+      <span class="lbl">نغمة قيام الليل</span>
+      <select class="field" id="qiyamTone" aria-label="نغمة قيام الليل"></select>
+    </div>
+    <div class="row" style="margin-bottom:12px">
       <span class="lbl">تنبيه الفجر بصوت وأسئلة (يصحّيك)</span>
       <label class="switch">
         <input type="checkbox" id="wakeOn" aria-label="تنبيه الفجر بصوت وأسئلة">
@@ -1237,6 +1241,10 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">بعد الصلاة بـ (دقيقة)</span>
       <input class="field" type="number" min="1" max="60" id="postMin" value="10" aria-label="عدد الدقايق بعد الصلاة">
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <span class="lbl">نغمة أذكار ما بعد الصلاة</span>
+      <select class="field" id="postTone" aria-label="نغمة أذكار ما بعد الصلاة"></select>
     </div>
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تذكير بدعاء</span>
@@ -1278,6 +1286,10 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
         <option value="45">كل ٤٥ دقيقة</option>
         <option value="60">كل ساعة</option>
       </select>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <span class="lbl">نغمة الصلاة على النبي</span>
+      <select class="field" id="salTone" aria-label="نغمة الصلاة على النبي"></select>
     </div>
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تذكير صلاة الضحى</span>
@@ -1747,7 +1759,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
 
   // ---------- Saved state ----------
   var KEY = "prayer-pro-v3";
-  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
+  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, salTone: "t-salawat", qiyamTone: "t-qiyam", postTone: "t-adhkar-auto", autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -1786,6 +1798,9 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (s && typeof s.floatAsked === "boolean") state.floatAsked = s.floatAsked;
       if (s && s.adhanPer && typeof s.adhanPer === "object") ["fajr", "dhuhr", "asr", "maghrib", "isha"].forEach(function (k) { if (typeof s.adhanPer[k] === "boolean") state.adhanPer[k] = s.adhanPer[k]; });
       if (s && typeof s.postOn === "boolean") state.postOn = s.postOn;
+      if (s && typeof s.salTone === "string") state.salTone = s.salTone;
+      if (s && typeof s.qiyamTone === "string") state.qiyamTone = s.qiyamTone;
+      if (s && typeof s.postTone === "string") state.postTone = s.postTone;
       if (s && typeof s.postMin === "number" && s.postMin >= 1 && s.postMin <= 60) state.postMin = s.postMin;
       if (s && typeof s.autoNight === "boolean") state.autoNight = s.autoNight;
       if (s && typeof s.duaOn === "boolean") state.duaOn = s.duaOn;
@@ -2578,7 +2593,9 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     { id: "b-makkah-2", name: "أذان الحرم المكي 2", src: "adhan/makkah-2.mp3", builtin: true },
     { id: "b-refaat", name: "أذان القاهرة - محمد رفعت", src: "adhan/cairo-refaat.mp3", builtin: true },
     { id: "b-albanna", name: "أذان القاهرة - محمد علي البنا", src: "adhan/cairo-albanna.mp3", builtin: true },
-    { id: "b-mnshawi", name: "أذان الشيخ المنشاوي", src: "adhan/mnshawi.mp3", builtin: true }
+    { id: "b-mnshawi", name: "أذان الشيخ المنشاوي", src: "adhan/mnshawi.mp3", builtin: true },
+    { id: "alarm-classic", name: "منبّه كلاسيك", src: "alarm/beep-classic.mp3", builtin: true, alarm: true },
+    { id: "alarm-pulse", name: "منبّه متقطّع", src: "alarm/beep-pulse.mp3", builtin: true, alarm: true }
   ];
   var sounds = [];            // { id, name, blob }
   var urlCache = {};          // id -> object URL
@@ -2631,14 +2648,15 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var picked = selectedSound();
     document.getElementById("adhanPickName").textContent = picked ? picked.name : "اختار المؤذن";
     el.adhanList.innerHTML = "";
-    if (!sounds.length) {
+    var adhanList = sounds.filter(function (x) { return !x.alarm; });
+    if (!adhanList.length) {
       var empty = document.createElement("span");
       empty.className = "muted";
       empty.textContent = "لسه ما ضفتش أي ملف أذان.";
       el.adhanList.appendChild(empty);
       return;
     }
-    sounds.forEach(function (s) {
+    adhanList.forEach(function (s) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "chip-btn";
@@ -2864,7 +2882,36 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var male = ar.filter(function (v) { return /male|maged|omar|tarik|ahmad|hamed|-d$|-b$/i.test(v.name) && !/female/i.test(v.name); });
     return male[0] || ar.filter(function (v) { return !/female|salma|hoda|zariyah|-a$|-c$/i.test(v.name); })[0] || ar[0] || null;
   }
+  var TONES = [
+    { id: "t-salawat", name: "الصلاة على النبي", src: "tones/salawat.mp3" },
+    { id: "t-adhkar-auto", name: "أصبح الملك لله / أمسى الملك لله (حسب الوقت)", src: null },
+    { id: "t-adhkar-morning", name: "أصبحنا وأصبح الملك لله", src: "tones/adhkar-morning.mp3" },
+    { id: "t-adhkar-evening", name: "أمسينا وأمسى الملك لله", src: "tones/adhkar-evening.mp3" },
+    { id: "t-qiyam", name: "قيام الليل (سورة الفرقان)", src: "tones/qiyam.mp3" }
+  ];
+  var toneAudio = null;
+  function playTone(id) {
+    try {
+      if (id === "t-adhkar-auto") {
+        var hr = +new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: "Africa/Cairo" }).format(new Date());
+        id = hr < 12 ? "t-adhkar-morning" : "t-adhkar-evening";
+      }
+      var t = TONES.filter(function (x) { return x.id === id; })[0];
+      if (!t) return;
+      if (toneAudio) { toneAudio.pause(); }
+      toneAudio = new Audio(t.src);
+      var pr = toneAudio.play(); if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) {}
+  }
+  function fillToneSelect(sel, key) {
+    sel.textContent = "";
+    TONES.forEach(function (x) { var o = document.createElement("option"); o.value = x.id; o.textContent = x.name; sel.appendChild(o); });
+    sel.value = state[key];
+    sel.addEventListener("change", function () { state[key] = sel.value; save(); playTone(sel.value); });
+  }
   function speakSal() {
+    playTone(state.salTone);
+    return;
     try {
       if (!("speechSynthesis" in window)) return;
       var u = new SpeechSynthesisUtterance("صَلِّ عَلَى النَّبِيِّ");
@@ -2965,6 +3012,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
         if (mins >= state.postMin && mins < state.postMin + 1 && !fired[kPost]) {
           fired[kPost] = true;
           notify("افتح أذكار ما بعد الصلاة", postBody(p.k));
+          playTone(state.postTone);
         }
       });
     }
@@ -3052,6 +3100,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (hm === state.qiyamTime && !fired[kQ]) {
         fired[kQ] = true;
         notify("قيام الليل", "﴿تَتَجَافَىٰ جُنُوبُهُمْ عَنِ الْمَضَاجِعِ يَدْعُونَ رَبَّهُمْ خَوْفًا وَطَمَعًا﴾ السجدة: 16");
+        playTone(state.qiyamTone);
       }
     }
 
@@ -3101,10 +3150,14 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   var wakeFinal = false;
   var wakeAudio = null;
   function stopWakeSound() { try { if (wakeAudio) { wakeAudio.pause(); wakeAudio.currentTime = 0; } } catch (e) {} wakeAudio = null; }
+  function wakeList() {
+    var l = sounds.filter(function (x) { return x.alarm || !x.src; });
+    return l.length ? l : BUILTIN.filter(function (x) { return x.alarm; });
+  }
   function startWakeSound() {
     stopWakeSound();
     try {
-      var list = sounds.length ? sounds : BUILTIN;
+      var list = wakeList();
       var s = list.filter(function (x) { return x.id === state.wakeSoundId; })[0] || list[0] || null;
       if (!s) return;
       wakeAudio = new Audio(soundUrl(s));
@@ -3116,9 +3169,10 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var sel = document.getElementById("wakeSound");
     if (!sel) return;
     sel.textContent = "";
-    sounds.forEach(function (x) { var o = document.createElement("option"); o.value = x.id; o.textContent = x.name; sel.appendChild(o); });
-    var has = sounds.some(function (x) { return x.id === state.wakeSoundId; });
-    if (!has && sounds.length) state.wakeSoundId = sounds[0].id;
+    var list = wakeList();
+    list.forEach(function (x) { var o = document.createElement("option"); o.value = x.id; o.textContent = x.name; sel.appendChild(o); });
+    var has = list.some(function (x) { return x.id === state.wakeSoundId; });
+    if (!has && list.length) state.wakeSoundId = list[0].id;
     sel.value = state.wakeSoundId || "";
   }
   function wakeAsk() {
@@ -3331,6 +3385,9 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   preOn.addEventListener("change", function () { state.preOn = preOn.checked; save(); if (preOn.checked) askPerm(); });
   qiyamOn.addEventListener("change", function () { state.qiyamOn = qiyamOn.checked; save(); if (qiyamOn.checked) askPerm(); });
   qiyamTime.addEventListener("change", function () { state.qiyamTime = qiyamTime.value || "22:00"; save(); });
+  fillToneSelect(document.getElementById("salTone"), "salTone");
+  fillToneSelect(document.getElementById("qiyamTone"), "qiyamTone");
+  fillToneSelect(document.getElementById("postTone"), "postTone");
   var postOn = document.getElementById("postOn");
   var postMin = document.getElementById("postMin");
   postOn.checked = state.postOn;
