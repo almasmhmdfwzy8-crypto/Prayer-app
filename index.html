@@ -927,6 +927,13 @@ body.mq-on #view-mushaf.mq-full { bottom: 0; }
 #view-mushaf .mq-text { font-weight: 700; color: var(--ink); text-shadow: none; }
 #view-mushaf .m-par { text-align-last: start; }
 #view-mushaf .mq-juzmark { display: none; }
+/* ---------- v71: reading mode, full screen, controls on tap ---------- */
+body.mq-read.mq-on .hero-top { position: fixed; top: 0; left: 0; right: 0; z-index: 60; transform: translateY(-110%); transition: transform .2s ease; }
+body.mq-read.mq-on.mq-chrome .hero-top { transform: none; }
+body.mq-read.mq-on #view-mushaf.mq-full { top: 0; }
+body.mq-read #view-mushaf .mq-frame { border: 0; border-radius: 0; box-shadow: none; padding: 2px; }
+body.mq-read #view-mushaf .mq-page { padding: 0; }
+body.mq-read #view-mushaf .mq-bar { display: none; }
 /* ---------- v65: tasbeeh settings panel ---------- */
 #tasbeeh .tz-set { margin: 0 12px 8px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
 #tasbeeh .tz-set .h { margin: 0 0 6px; font-size: 1rem; }
@@ -942,6 +949,10 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
 #view-mushaf .mq-bar { padding: 0 0 4px; margin: 0 0 2px; }
 #view-mushaf .mq-page { padding: 2px; }
 #view-mushaf .mq-frame { padding: 6px; }
+/* v72: مسافة واضحة بين نص القرآن وحواف الفريم من الجنبين */
+#view-mushaf .mq-body { padding: 0 12px; box-sizing: border-box; }
+#view-mushaf .mq-frame { border-width: 3px; }
+body.mq-read #view-mushaf .mq-body { padding: 0 8px; }
 </style>
 </head>
 <body>
@@ -1066,6 +1077,13 @@ body.mq-on .hdr-mq svg { width: 20px; height: 20px; }
 <div class="m-sheet side" id="mqSheet" hidden role="dialog" aria-modal="true" aria-label="خيارات المصحف">
   <aside class="m-sheet-panel side">
     <div class="m-sheet-head"><strong>خيارات المصحف</strong><button class="btn ghost" id="mqSheetClose" type="button">إغلاق</button></div>
+    <div class="mq-group">
+      <h3>العرض</h3>
+      <div class="row">
+        <span class="lbl">وضع القراءة (ملء الشاشة، واضغط على الشاشة للخيارات)</span>
+        <label class="switch"><input type="checkbox" id="mqRead" aria-label="وضع القراءة"><span></span></label>
+      </div>
+    </div>
     <div class="mq-group">
       <h3>التنقل</h3>
       <div class="mq-nav">
@@ -1769,7 +1787,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
 
   // ---------- Saved state ----------
   var KEY = "prayer-pro-v3";
-  var state = { city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, salTone: "t-salawat", morningRemOn: false, morningRemTime: "06:30", eveningRemOn: false, eveningRemTime: "17:00", autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
+  var state = { mqRead: false, city: "القاهرة", asr: 1, adhanOn: true, theme: "emerald", adhanId: "", cat: "morning", preOn: false, qiyamOn: false, qiyamTime: "22:00", wakeOn: false, wakeTime: "04:30", wakeSoundId: "", wakeDoneDay: "", witrOn: false, istOn: false, floatOn: false, floatEvery: 60, floatCats: { morning: true, evening: true, istighfar: true, salawat: true }, floatAsked: false, salOn: false, salMin: 30, duhaOn: false, fastOn: false, adhanPer: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true }, q10: true, postOn: false, postMin: 10, salTone: "t-salawat", morningRemOn: false, morningRemTime: "06:30", eveningRemOn: false, eveningRemTime: "17:00", autoNight: true, duaOn: false, duaHours: 3, friOn: true, fontScale: 1, contrast: false, hijriShift: 0, keepAwake: false, persist: true, welcomed: false, adj: { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } };
   try {
     var raw = localStorage.getItem(KEY);
     if (raw) {
@@ -1788,7 +1806,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (s && typeof s.wirdTime === "string" && /^\d{2}:\d{2}$/.test(s.wirdTime)) state.wirdTime = s.wirdTime;
       if (s && ["full", "short"].indexOf(s.pnStyle) >= 0) state.pnStyle = s.pnStyle;
       if (s && ["bar", "hidden"].indexOf(s.pnPos) >= 0) state.pnPos = s.pnPos;
-      if (s && ["theme", "default"].indexOf(s.pnColor) >= 0) state.pnColor = s.pnColor;
+      if (s && (["theme", "default"].indexOf(s.pnColor) >= 0 || /^#[0-9a-fA-F]{6}$/.test(s.pnColor || ""))) state.pnColor = s.pnColor;
       if (s && ["off", "light", "strong"].indexOf(s.hapt) >= 0) state.hapt = s.hapt;
       if (s && typeof s.kahfOn === "boolean") state.kahfOn = s.kahfOn;
       if (s && typeof s.mulkOn === "boolean") state.mulkOn = s.mulkOn;
@@ -1809,6 +1827,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (s && s.adhanPer && typeof s.adhanPer === "object") ["fajr", "dhuhr", "asr", "maghrib", "isha"].forEach(function (k) { if (typeof s.adhanPer[k] === "boolean") state.adhanPer[k] = s.adhanPer[k]; });
       if (s && typeof s.postOn === "boolean") state.postOn = s.postOn;
       if (s && typeof s.salTone === "string") state.salTone = s.salTone;
+      if (s && typeof s.mqRead === "boolean") state.mqRead = s.mqRead;
       if (s && typeof s.morningRemOn === "boolean") state.morningRemOn = s.morningRemOn;
       if (s && /^\d{2}:\d{2}$/.test(s.morningRemTime || "")) state.morningRemTime = s.morningRemTime;
       if (s && typeof s.eveningRemOn === "boolean") state.eveningRemOn = s.eveningRemOn;
@@ -2301,6 +2320,22 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!views.mushaf.hidden) fitMushaf(); });
   window.addEventListener("resize", function () { if (!views.mushaf.hidden) { sizeTasbeeh(); fitMushaf(); } });
+  (function () {
+    var rd = document.getElementById("mqRead");
+    rd.checked = !!state.mqRead;
+    document.body.classList.toggle("mq-read", !!state.mqRead);
+    rd.addEventListener("change", function () {
+      state.mqRead = rd.checked; save();
+      document.body.classList.toggle("mq-read", rd.checked);
+      document.body.classList.remove("mq-chrome");
+      fitMushaf();
+    });
+    document.getElementById("view-mushaf").addEventListener("click", function (e) {
+      if (!document.body.classList.contains("mq-read")) return;
+      if (e.target.closest("button, input, label, .m-sheet")) return;
+      document.body.classList.toggle("mq-chrome");
+    });
+  })();
   function openMushafSheet() { renderSaved(); document.getElementById("mqSheet").hidden = false; }
   function closeMushafSheet() { document.getElementById("mqSheet").hidden = true; }
 
