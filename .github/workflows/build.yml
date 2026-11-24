@@ -745,6 +745,19 @@ jobs:
             echo "no DEBUG_KEYSTORE_B64 secret, using the default key"
           fi
 
+      - name: Force debug signing to the stable keystore
+        run: |
+          if [ -n "${{ secrets.DEBUG_KEYSTORE_B64 }}" ]; then
+            {
+              echo ''
+              echo 'android.signingConfigs.debug.storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")'
+              echo 'android.signingConfigs.debug.storePassword = "android"'
+              echo 'android.signingConfigs.debug.keyAlias = "androiddebugkey"'
+              echo 'android.signingConfigs.debug.keyPassword = "android"'
+            } >> android/app/build.gradle
+            echo "debug signing forced to stable keystore"
+          fi
+
       - name: Build APK
         working-directory: android
         run: |
