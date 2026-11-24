@@ -739,6 +739,8 @@ jobs:
             mkdir -p "$HOME/.android"
             echo "$KS" | base64 -d > "$HOME/.android/debug.keystore"
             echo "stable key installed"
+            ls -la "$HOME/.android/debug.keystore"
+            keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey 2>&1 | grep -E "SHA256|Alias|Entry|rror" || true
           else
             echo "no DEBUG_KEYSTORE_B64 secret, using the default key"
           fi
