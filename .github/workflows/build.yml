@@ -725,6 +725,11 @@ jobs:
           cp adhan/cairo-refaat.mp3 $RAW/adhan_refaat.mp3
           cp adhan/cairo-albanna.mp3 $RAW/adhan_albanna.mp3
           cp adhan/mnshawi.mp3 $RAW/adhan_mnshawi.mp3
+          cp tones/adhkar-morning.mp3 $RAW/adhkar_morning.mp3
+          cp tones/adhkar-evening.mp3 $RAW/adhkar_evening.mp3
+          cp tones/salawat.mp3 $RAW/salawat.mp3
+          cp tones/qiyam.mp3 $RAW/qiyam.mp3
+          cp alarm/fajr-amer-atayah.mp3 $RAW/alarm_fajr.mp3
 
       - name: Stable signing key (so updates install over the old app)
         env:
@@ -743,6 +748,13 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
+
+      - name: Show APK signature fingerprint (for debugging installs)
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          echo "APK size: $(stat -c %s $APK) bytes"
+          keytool -printcert -jarfile $APK | grep -E "SHA256|Owner" || true
+          echo "Build number: ${{ github.run_number }}"
 
       - uses: actions/upload-artifact@v4
         with:
