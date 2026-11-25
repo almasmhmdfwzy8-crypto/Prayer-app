@@ -242,8 +242,14 @@ public class AdhanNotifierPlugin extends Plugin {
                     p.setWakeMode(C.WAKE_MODE_NETWORK);
                     final boolean[] done = new boolean[1];
                     p.addListener(new Player.Listener() {
-                        public void onPlaybackStateChanged(int state) {
-                            if (state == Player.STATE_READY && !done[0]) { done[0] = true; call.resolve(); }
+                        public void onIsPlayingChanged(boolean isPlaying) {
+                            if (p != radio) return;
+                            if (isPlaying && !done[0]) { done[0] = true; call.resolve(); return; }
+                            if (done[0]) {
+                                com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
+                                o.put("playing", isPlaying);
+                                notifyListeners("radioPlaying", o);
+                            }
                         }
                         public void onPlayerError(PlaybackException error) {
                             boolean mine = (p == radio);
