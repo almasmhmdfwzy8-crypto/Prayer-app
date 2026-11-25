@@ -1258,6 +1258,15 @@ body.sel-play.mq-on #view-mushaf.mq-full { height: calc(100vh - var(--sp-h, 112p
 #selPlayer .sp-chips { display: flex; gap: 6px; }
 #selPlayer .sp-chips button { flex: 1 1 0; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; padding: 0; }
 #selPlayer .sp-chips button[aria-pressed="true"] { background: var(--accent, #1f7a5c); color: var(--on-accent, #fff); border-color: transparent; }
+@media (max-height: 700px) {
+  #selPlayer .sp-panel { gap: 4px 8px; padding: 0 0 6px; margin-bottom: 6px; max-height: 34vh; -webkit-overflow-scrolling: touch; }
+  #selPlayer .sp-field { gap: 2px; }
+  #selPlayer .sp-field label { font-size: .72rem; }
+  #selPlayer .sp-panel select, #selPlayer .sp-step, #selPlayer .sp-chips button { min-height: 40px; height: 40px; }
+  #selPlayer .sp-step { height: 40px; }
+  #selPlayer .sp-sb { flex-basis: 40px; }
+  #selPlayer .sp-info { margin-bottom: 3px; }
+}
 
 #mqText { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 </style>
