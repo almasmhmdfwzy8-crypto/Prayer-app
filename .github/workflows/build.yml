@@ -397,6 +397,16 @@ jobs:
             echo "debug signing forced to stable keystore"
           fi
 
+      - name: Add audio player library for the Quran radio
+        run: |
+          {
+            echo ''
+            echo 'dependencies {'
+            echo '    implementation "androidx.media3:media3-exoplayer:1.1.1"'
+            echo '    implementation "androidx.media3:media3-exoplayer-hls:1.1.1"'
+            echo '}'
+          } >> android/app/build.gradle
+
       - name: Build APK
         working-directory: android
         run: |
