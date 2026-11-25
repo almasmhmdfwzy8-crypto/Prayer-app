@@ -504,6 +504,17 @@ public class AdhanService extends Service {
     }
 
     /** Readable text colour on a solid background (WCAG relative luminance). */
+    private static double lum(int c) {
+        double[] v = {(c >> 16 & 255) / 255.0, (c >> 8 & 255) / 255.0, (c & 255) / 255.0};
+        for (int i = 0; i < 3; i++) v[i] = v[i] <= 0.03928 ? v[i] / 12.92 : Math.pow((v[i] + 0.055) / 1.055, 2.4);
+        return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+    }
+    /** WCAG contrast of colour c against the fixed dark card #1B222C. */
+    private static double contrastOnDark(int c) {
+        double a = lum(c) + 0.05, b = lum(0xFF1B222C) + 0.05;
+        return a > b ? a / b : b / a;
+    }
+
     private int textOn(int bg) {
         double r = lin(((bg >> 16) & 0xFF) / 255.0), g = lin(((bg >> 8) & 0xFF) / 255.0), b = lin((bg & 0xFF) / 255.0);
         double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -552,23 +563,18 @@ public class AdhanService extends Service {
         if (colored) b.setColorized(true);
         if (nx != null && full && Build.VERSION.SDK_INT >= 24) {
             RemoteViews rv = new RemoteViews(getPackageName(), R.layout.pn_custom);
-            if (colored) {
-                // A custom layout without a notification style ignores setColor/setColorized, so paint the layout root itself.
-                rv.setInt(R.id.pn_root, "setBackgroundColor", colorOf(color));
-            }
             PendingIntent openApp = openAppIntent();
             if (openApp != null) rv.setOnClickPendingIntent(R.id.pn_root, openApp);
             rv.setTextViewText(R.id.pn_name, String.valueOf(nx[0]));
             rv.setChronometerCountDown(R.id.pn_time, true);
             rv.setChronometer(R.id.pn_time, SystemClock.elapsedRealtime() + (at - System.currentTimeMillis()), null, true);
             if (colored) {
-                // solid colour chosen by the user: pick black or white text that is readable on it.
-                int fg = textOn(colorOf(color));
-                rv.setTextColor(R.id.pn_label, fg);
-                rv.setTextColor(R.id.pn_name, fg);
-                rv.setTextColor(R.id.pn_time, fg);
+                // The card stays dark. The user's colour only tints the countdown digits.
+                int dig = colorOf(color);
+                // Card is fixed #1B222C. Use the chosen colour only when it reads on it (contrast 4.5 or more), else the default gold.
+                if (contrastOnDark(dig) < 4.5) dig = 0xFFF0CF7F;
+                rv.setTextColor(R.id.pn_time, dig);
             }
-            // otherwise the layout uses the system notification text styles (readable on light and dark)
             b.setCustomContentView(rv).setCustomBigContentView(rv);
             b.setShowWhen(false);
         } else {
