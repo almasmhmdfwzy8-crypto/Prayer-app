@@ -2,6 +2,7 @@
 <!-- Text uses the system notification text styles, so it stays readable on light and dark notification backgrounds.
      When the user picks a solid colour, AdhanService sets black or white text for that colour. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pn_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"

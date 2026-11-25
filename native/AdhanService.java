@@ -552,6 +552,12 @@ public class AdhanService extends Service {
         if (colored) b.setColorized(true);
         if (nx != null && full && Build.VERSION.SDK_INT >= 24) {
             RemoteViews rv = new RemoteViews(getPackageName(), R.layout.pn_custom);
+            if (colored) {
+                // A custom layout without a notification style ignores setColor/setColorized, so paint the layout root itself.
+                rv.setInt(R.id.pn_root, "setBackgroundColor", colorOf(color));
+            }
+            PendingIntent openApp = openAppIntent();
+            if (openApp != null) rv.setOnClickPendingIntent(R.id.pn_root, openApp);
             rv.setTextViewText(R.id.pn_name, String.valueOf(nx[0]));
             rv.setChronometerCountDown(R.id.pn_time, true);
             rv.setChronometer(R.id.pn_time, SystemClock.elapsedRealtime() + (at - System.currentTimeMillis()), null, true);
@@ -568,13 +574,23 @@ public class AdhanService extends Service {
         } else {
             b.setShowWhen(false);
         }
-        Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        if (launch != null) {
-            launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
-            b.setContentIntent(PendingIntent.getActivity(this, 0, launch, flags));
-        }
+        PendingIntent openAppPi = openAppIntent();
+        if (openAppPi != null) b.setContentIntent(openAppPi);
         return b.build();
+    }
+
+    /** Opens the app's main screen. Explicit component first (always resolves), launcher intent as a fallback. */
+    private PendingIntent openAppIntent() {
+        Intent launch = new Intent(Intent.ACTION_MAIN);
+        launch.addCategory(Intent.CATEGORY_LAUNCHER);
+        launch.setClassName(getPackageName(), getPackageName() + ".MainActivity");
+        if (getPackageManager().resolveActivity(launch, 0) == null) {
+            launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        }
+        if (launch == null) return null;
+        launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
+        return PendingIntent.getActivity(this, 0, launch, flags);
     }
 }

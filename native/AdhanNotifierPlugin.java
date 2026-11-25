@@ -6,6 +6,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Base64;
+import android.os.Handler;
+import android.os.Looper;
+import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.exoplayer.ExoPlayer;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -207,5 +214,63 @@ public class AdhanNotifierPlugin extends Plugin {
                 call.reject("update failed: " + e.getMessage());
             }
         }).start();
+    }
+
+    // ---------- Quran Radio (Cairo): official HLS stream, audio only (video track disabled), started only by the user ----------
+    private ExoPlayer radio;
+    private final Handler radioMain = new Handler(Looper.getMainLooper());
+
+    private void radioReleaseNow() {
+        if (radio != null) {
+            try { radio.stop(); } catch (Exception e) { }
+            try { radio.release(); } catch (Exception e) { }
+            radio = null;
+        }
+    }
+
+    @PluginMethod
+    public void radioStart(final PluginCall call) {
+        final String url = call.getString("url", "");
+        if (!url.startsWith("https://")) { call.reject("bad url"); return; }
+        radioMain.post(new Runnable() {
+            public void run() {
+                try {
+                    radioReleaseNow();
+                    final ExoPlayer p = new ExoPlayer.Builder(getContext()).build();
+                    radio = p;
+                    p.setTrackSelectionParameters(p.getTrackSelectionParameters().buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build());
+                    p.setWakeMode(C.WAKE_MODE_NETWORK);
+                    final boolean[] done = new boolean[1];
+                    p.addListener(new Player.Listener() {
+                        public void onPlaybackStateChanged(int state) {
+                            if (state == Player.STATE_READY && !done[0]) { done[0] = true; call.resolve(); }
+                        }
+                        public void onPlayerError(PlaybackException error) {
+                            boolean mine = (p == radio);
+                            if (mine) radioReleaseNow();
+                            if (!done[0]) { done[0] = true; call.reject("stream error"); }
+                            else if (mine) notifyListeners("radioStopped", new com.getcapacitor.JSObject());
+                        }
+                    });
+                    p.setMediaItem(MediaItem.fromUri(url));
+                    p.setPlayWhenReady(true);
+                    p.prepare();
+                } catch (Exception e) {
+                    radioReleaseNow();
+                    call.reject("radio failed");
+                }
+            }
+        });
+    }
+
+    @PluginMethod
+    public void radioStop(final PluginCall call) {
+        radioMain.post(new Runnable() { public void run() { radioReleaseNow(); call.resolve(); } });
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        radioMain.post(new Runnable() { public void run() { radioReleaseNow(); } });
+        super.handleOnDestroy();
     }
 }
