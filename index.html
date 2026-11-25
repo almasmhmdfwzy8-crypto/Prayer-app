@@ -1153,6 +1153,39 @@ body #view-mushaf .mq-step:disabled { opacity: 0.35; }
 #mqSheet .mq-search-in { min-height: 40px; padding: 8px 12px; }
 @media (prefers-reduced-motion: reduce) { body #view-mushaf .mq-bar { transition: none; } }
 body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform: translate(calc(-50% - 0.38em), calc(-50% + var(--mn-dy, 0em))); padding: 0; line-height: 1; }
+
+/* press feedback: every tappable control visibly reacts (light, no blur or shadow) */
+.tile, .btn, .chip-btn, .hdr-mq, .rr-btn, .yomak-more > summary, .sira > summary, .mq-step, .switch { -webkit-tap-highlight-color: transparent; }
+.tile:active, .btn:active, .chip-btn:active, .hdr-mq:active, .rr-btn:active, .mq-step:active { transform: scale(0.96); filter: brightness(1.15); transition: transform .08s ease, filter .08s ease; }
+.yomak-more > summary:active, .sira > summary:active { background: var(--surface-2); }
+.yomak-more[open] > summary { background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.yomak-more > summary::after { content: "‹"; float: left; color: var(--gold); font-size: 1.2rem; line-height: 1; transition: transform .2s; }
+.yomak-more[open] > summary::after { transform: rotate(-90deg); }
+
+body #view-mushaf .mq-bar .hdr-mq-pill { width: auto; min-width: 0; height: 36px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border-radius: 18px; background: var(--mq-soft); font-weight: 800; font-size: 0.85rem; }
+body #view-mushaf .mq-bar .hdr-mq-pill:active { background: var(--mq-line); }
+body #view-mushaf .mq-bar .hdr-mq-pill svg { width: 18px; height: 18px; }
+@media (max-width: 359px) { body #view-mushaf .mq-bar .hdr-mq-pill { width: auto; height: 34px; padding: 0 10px; } }
+
+.tabs { backdrop-filter: none; box-shadow: none; gap: 2px; padding-left: 6px; padding-right: 6px; }
+.tab { min-width: 0; padding: 8px 2px; font-size: 0.82rem; white-space: nowrap; overflow: hidden; }
+.tab svg { width: 22px; height: 22px; }
+@media (max-width: 359px) { .tab { font-size: 0.74rem; } .tab svg { width: 20px; height: 20px; } }
+#view-fajr .row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+#view-fajr .row .btn { width: 100%; margin: 0; }
+
+.yomak { gap: 12px; }
+.yomak-next { border-inline-start: 4px solid var(--gold); font-weight: 700; line-height: 1.7; }
+.yomak-list { display: grid; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); }
+.yomak-list .yomak-row { padding: 11px 14px; border-top: 1px solid var(--line); }
+.yomak-list .yomak-row:first-child { border-top: 0; }
+.yomak-list .yomak-row .lbl { font-weight: 800; }
+.yomak-list .yomak-row .muted { font-size: 0.88rem; text-align: left; }
+
+.yomak-list .yomak-row > span:nth-child(2) { display: flex; justify-content: center; }
+.yomak-list .yomak-row > span:nth-child(2) .btn { width: auto; min-height: 0; margin: 0; padding: 4px 12px; font-size: 0.82rem; border-radius: 999px; }
+
+#mqSheet .m-sheet-head { position: sticky; top: 0; z-index: 2; background: var(--surface, var(--bg)); padding: 10px 0; }
 </style>
 </head>
 <body>
@@ -1169,7 +1202,7 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
         <h1 id="pageTitle"></h1>
         <button class="frame-quran" id="quranBtn" type="button" aria-label="فتح المصحف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7.5 4.5 4 5v13c3.5-.5 6 0 8 1.5 2-1.5 4.5-2 8-1.5V5c-3.5-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></svg></button></span>
     </div>
-    <button class="hdr-mq" id="mqMenuBtn" type="button" aria-label="خيارات المصحف" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    <button class="hdr-mq hdr-mq-pill" id="mqMenuBtn" type="button" aria-label="خيارات المصحف" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>خيارات</span></button>
   </div>
   <div class="clock" id="clockBox">
     <div class="time" id="now"></div>
@@ -1189,7 +1222,7 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
     <div><span class="left" id="nextLeft"></span></div>
   </section>
   <div class="home-tiles" role="group" aria-label="اختصارات">
-    <button class="home-tile" id="tileFajr" type="button" aria-controls="fajrCampaign" aria-expanded="false">
+    <button class="home-tile" id="tileFajr" type="button" aria-controls="view-fajr">
       <span class="tile-ico tile-ico-img" aria-hidden="true"><svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="فجر وخطوط هندسية">
         <defs><linearGradient id="fjTileSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b4a43"/><stop offset=".62" stop-color="#1f7a6c"/><stop offset=".9" stop-color="#d9a858"/><stop offset="1" stop-color="#f3d89a"/></linearGradient></defs>
         <rect width="120" height="120" rx="28" fill="url(#fjTileSky)"/>
@@ -1210,42 +1243,19 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
       <span>القرآن الكريم</span>
     </button>
   </div>
-  <section class="card" id="fajrCampaign" aria-label="رجالة الفجر" hidden>
-    <div class="fajr-hero" aria-hidden="true">
-      <svg viewBox="0 0 360 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="فجر وخطوط هندسية">
-        <defs><linearGradient id="fjHeroSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b3d38"/><stop offset=".5" stop-color="#1f6f63"/><stop offset=".85" stop-color="#d9a858"/><stop offset="1" stop-color="#f3d89a"/></linearGradient></defs>
-        <rect width="360" height="150" fill="url(#fjHeroSky)"/>
-        <g fill="#fbf3dc" opacity=".7"><circle cx="40" cy="26" r="1.2"/><circle cx="92" cy="18" r="1"/><circle cx="150" cy="38" r="1.1"/><circle cx="220" cy="16" r="1"/><circle cx="26" cy="70" r="1"/><circle cx="330" cy="100" r="1"/></g>
-        <path d="M282.0 22.0 L289.3 34.4 L303.2 30.8 L299.6 44.7 L312.0 52.0 L299.6 59.3 L303.2 73.2 L289.3 69.6 L282.0 82.0 L274.7 69.6 L260.8 73.2 L264.4 59.3 L252.0 52.0 L264.4 44.7 L260.8 30.8 L274.7 34.4 Z" fill="none" stroke="#f3e2b0" stroke-width="2" stroke-linejoin="round" opacity=".9"/>
-        <path d="M282.0 36.0 L285.8 42.8 L293.3 40.7 L291.2 48.2 L298.0 52.0 L291.2 55.8 L293.3 63.3 L285.8 61.2 L282.0 68.0 L278.2 61.2 L270.7 63.3 L272.8 55.8 L266.0 52.0 L272.8 48.2 L270.7 40.7 L278.2 42.8 Z" fill="#f3e2b0" opacity=".18"/>
-        <circle cx="150" cy="122" r="38" fill="#fbf3dc" opacity=".95"/>
-        <rect y="122" width="360" height="28" fill="#072a27"/>
-        <rect x="60" y="121.2" width="240" height="2" rx="1" fill="#f3e2b0" opacity=".75"/>
-        <path d="M40 150 V128 Q50 118 60 128 V150 Z M300 150 V128 Q310 118 320 128 V150 Z" fill="#072a27"/>
-      </svg>
-      <div class="fajr-hero-txt"><strong>رجالة الفجر</strong><span>40 يوم · صلّ الفجر في الجماعة</span></div>
-    </div>
-    <p class="muted" style="margin:6px 0 10px">40 يوم نصلي الفجر في الجماعة. سجّل كل يوم وشوف تقدمك.</p>
-    <p class="fajr-msg" id="fajrMsg"></p>
-    <p class="fajr-badge" id="fajrBadge" hidden></p>
-    <div class="bar" aria-hidden="true"><span id="fajrBar"></span></div>
-    <p class="muted" id="fajrText"></p>
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-      <button class="btn" id="fajrToggle" type="button">صليت الفجر في الجماعة اليوم</button>
-      <button class="btn ghost" id="fajrShare" type="button">شارك الحملة</button>
-      <button class="btn ghost" id="fajrAdhkar" type="button">أذكار بعد الصلاة</button>
-    </div>
-  </section>
+  
   <section class="card yomak" id="yomak" aria-label="يومك في زاد المؤمن">
     <h2 class="h">يومك في زاد المؤمن</h2>
-    <div class="yomak-row"><span class="lbl">الورد</span><div class="bar" aria-hidden="true"><span id="yWirdBar"></span></div><span class="muted" id="yWird"></span></div>
-    <div class="yomak-row"><span class="lbl">الأذكار</span><span></span><span class="muted" id="yAdhkar"></span></div>
-    <div class="yomak-row"><span class="lbl">الفجر</span><span></span><span class="muted" id="yFajr"></span></div>
-    <div class="yomak-row"><span class="lbl">الصلوات</span><span></span><span class="muted" id="yPray"></span></div>
-    <div class="yomak-row"><span class="lbl">الصيام</span><span></span><span class="muted" id="yFast"></span></div>
-    <div class="yomak-row"><span class="lbl">السيرة</span><span></span><span class="muted" id="ySira"></span></div>
     <p class="yomak-next" id="yNext"></p>
     <button class="btn" id="yResume" type="button">استئناف القراءة</button>
+    <div class="yomak-list">
+    <div class="yomak-row"><span class="lbl">الصلوات</span><span></span><span class="muted" id="yPray"></span></div>
+    <div class="yomak-row"><span class="lbl">الفجر</span><span></span><span class="muted" id="yFajr"></span></div>
+    <div class="yomak-row"><span class="lbl">الأذكار</span><span></span><span class="muted" id="yAdhkar"></span></div>
+    <div class="yomak-row"><span class="lbl">الورد</span><div class="bar" aria-hidden="true"><span id="yWirdBar"></span></div><span class="muted" id="yWird"></span></div>
+    <div class="yomak-row"><span class="lbl">السيرة</span><span></span><span class="muted" id="ySira"></span></div>
+    <div class="yomak-row"><span class="lbl">الصيام</span><span></span><span class="muted" id="yFast"></span></div>
+    </div>
     <details class="card yomak-more">
       <summary>تفاصيل وأدوات اليوم</summary>
       <div class="yomak-inner">
@@ -1362,6 +1372,32 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
 <div class="m-sheet" id="mqSheet" hidden role="dialog" aria-modal="true" aria-label="خيارات المصحف">
   <aside class="m-sheet-panel">
     <div class="m-sheet-head"><strong>خيارات المصحف</strong><button class="btn ghost" id="mqSheetClose" type="button">إغلاق</button></div>
+    <div class="mq-group fold" id="recGroup">
+      <h3>تلاوات المصحف (تحميل اختياري)</h3>
+      <p class="muted" style="margin:0 0 8px">التلاوة بتتشغل من الإنترنت أو بتحمّلها على جهازك بإذنك. الحجم بيظهر قبل التحميل. المصدر: mp3quran.net</p>
+      <div class="mq-row"><select id="recReciter" class="mq-search-in" aria-label="القارئ"></select></div>
+      <div class="mq-row"><select id="recMoshaf" class="mq-search-in" aria-label="الرواية والنوع"></select></div>
+      <div class="mq-row"><select id="recSurah" class="mq-search-in" aria-label="السورة"></select></div>
+      <p class="muted" id="recInfo" style="margin:6px 0"></p>
+      <div class="mq-row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn" id="recPlay" type="button">تشغيل</button>
+        <button class="btn ghost" id="recDl" type="button">تحميل</button>
+        <button class="btn ghost" id="recDel" type="button" hidden>حذف التحميل</button>
+      </div>
+      <audio id="recAudio" controls preload="none" style="width:100%;margin-top:8px" hidden></audio>
+    </div>
+    <div class="mq-group fold" id="tafGroup">
+      <h3>التفسير (تحميل اختياري)</h3>
+      <p class="muted" style="margin:0 0 8px">بيتنزّل تفسير السورة اللي تختارها بس، وبيفضل على جهازك. المصدر: qul.tarteel.ai عن طريق مشروع spa5k/tafsir_api.</p>
+      <div class="mq-row"><select id="tafEd" class="mq-search-in" aria-label="التفسير"><option value="ar-tafsir-muyassar">التفسير الميسر</option><option value="ar-tafsir-as-saadi">تفسير السعدي</option></select></div>
+      <div class="mq-row"><select id="tafSurah" class="mq-search-in" aria-label="سورة التفسير"></select></div>
+      <p class="muted" id="tafInfo" style="margin:6px 0"></p>
+      <div class="mq-row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn" id="tafShow" type="button">عرض التفسير</button>
+        <button class="btn ghost" id="tafDel" type="button" hidden>حذف التحميل</button>
+      </div>
+      <div id="tafBody" dir="rtl" style="display:none;margin-top:10px;max-height:38vh;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px;border:1px solid var(--line);border-radius:12px;line-height:2;white-space:pre-wrap"></div>
+    </div>
     <div class="mq-group fold">
       <h3>علامات الآيات</h3>
       <div class="mq-row"><button class="btn" id="ayahMarkSave" type="button">علّم الآية المختارة</button></div>
@@ -1459,6 +1495,34 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
 
 <!-- ============ Settings view ============ -->
 <!-- ============ Seerah view (own section) ============ -->
+<main class="wrap float" id="view-fajr" hidden>
+  <section class="card" id="fajrCampaign" aria-label="رجالة الفجر">
+    <div class="fajr-hero" aria-hidden="true">
+      <svg viewBox="0 0 360 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="فجر وخطوط هندسية">
+        <defs><linearGradient id="fjHeroSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b3d38"/><stop offset=".5" stop-color="#1f6f63"/><stop offset=".85" stop-color="#d9a858"/><stop offset="1" stop-color="#f3d89a"/></linearGradient></defs>
+        <rect width="360" height="150" fill="url(#fjHeroSky)"/>
+        <g fill="#fbf3dc" opacity=".7"><circle cx="40" cy="26" r="1.2"/><circle cx="92" cy="18" r="1"/><circle cx="150" cy="38" r="1.1"/><circle cx="220" cy="16" r="1"/><circle cx="26" cy="70" r="1"/><circle cx="330" cy="100" r="1"/></g>
+        <path transform="translate(-215 0)" d="M282.0 22.0 L289.3 34.4 L303.2 30.8 L299.6 44.7 L312.0 52.0 L299.6 59.3 L303.2 73.2 L289.3 69.6 L282.0 82.0 L274.7 69.6 L260.8 73.2 L264.4 59.3 L252.0 52.0 L264.4 44.7 L260.8 30.8 L274.7 34.4 Z" fill="none" stroke="#f3e2b0" stroke-width="2" stroke-linejoin="round" opacity=".9"/>
+        <path transform="translate(-215 0)" d="M282.0 36.0 L285.8 42.8 L293.3 40.7 L291.2 48.2 L298.0 52.0 L291.2 55.8 L293.3 63.3 L285.8 61.2 L282.0 68.0 L278.2 61.2 L270.7 63.3 L272.8 55.8 L266.0 52.0 L272.8 48.2 L270.7 40.7 L278.2 42.8 Z" fill="#f3e2b0" opacity=".18"/>
+        <circle cx="150" cy="122" r="38" fill="#fbf3dc" opacity=".95"/>
+        <rect y="122" width="360" height="28" fill="#072a27"/>
+        <rect x="60" y="121.2" width="240" height="2" rx="1" fill="#f3e2b0" opacity=".75"/>
+        <path d="M40 150 V128 Q50 118 60 128 V150 Z M300 150 V128 Q310 118 320 128 V150 Z" fill="#072a27"/>
+      </svg>
+      <div class="fajr-hero-txt"><strong>رجالة الفجر</strong><span>40 يوم · صلّ الفجر في الجماعة</span></div>
+    </div>
+    <p class="muted" style="margin:6px 0 10px">40 يوم نصلي الفجر في الجماعة. سجّل كل يوم وشوف تقدمك.</p>
+    <p class="fajr-msg" id="fajrMsg"></p>
+    <p class="fajr-badge" id="fajrBadge" hidden></p>
+    <div class="bar" aria-hidden="true"><span id="fajrBar"></span></div>
+    <p class="muted" id="fajrText"></p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn" id="fajrToggle" type="button">صليت الفجر في الجماعة اليوم</button>
+      <button class="btn ghost" id="fajrShare" type="button">شارك الحملة</button>
+      <button class="btn ghost" id="fajrAdhkar" type="button">أذكار بعد الصلاة</button>
+    </div>
+  </section>
+</main>
 <main class="wrap float" id="view-sira" hidden>
   <section class="card sira-card" id="siraCard">
     <h2 class="h">السيرة النبوية</h2>
@@ -1899,7 +1963,7 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
         <span></span>
       </label>
     </div>
-    <div class="row" style="margin-bottom:12px">
+    <div class="row" hidden style="display:none" style="margin-bottom:12px">
       <span class="lbl">كل كام دقيقة</span>
       <select class="field" id="salMin" aria-label="المدة بين تذكيرات الصلاة على النبي">
         <option value="10">كل ١٠ دقايق</option>
@@ -1910,19 +1974,19 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
         <option value="60">كل ساعة</option>
       </select>
     </div>
-    <div class="row" style="margin-bottom:12px">
+    <div class="row" hidden style="display:none" style="margin-bottom:12px">
       <span class="lbl">صوت الصلاة على النبي</span>
       <select class="field" id="salSound" aria-label="صوت الصلاة على النبي">
         <option value="default">الصوت الافتراضي</option>
         <option value="custom" id="salSoundCustomOpt" hidden>صوتي المختار</option>
       </select>
     </div>
-    <div class="row" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
+    <div class="row" hidden style="display:none" style="margin-bottom:12px;gap:8px;flex-wrap:wrap">
       <button class="btn ghost" id="salPick" type="button">اختيار صوت من الموبايل</button>
       <button class="btn ghost" id="salTest" type="button">تجربة الصوت</button>
       <input type="file" id="salFile" accept="audio/*" hidden>
     </div>
-    <p class="note" id="salNote" style="margin:0 0 12px;font-size:.85rem;opacity:.8">الصلاة على النبي بتتشغّل صوت بس، من غير إشعار، في الأوقات المضبوطة (مثلا كل ٣٠ دقيقة). لو الأذان شغّال وقتها، بتستنى لحد ما يخلص وتتشغّل مرة واحدة بس.</p>
+    <p class="note" id="salNote" hidden style="display:none;margin:0 0 12px;font-size:.85rem;opacity:.8">الصلاة على النبي بتتشغّل صوت بس، من غير إشعار، في الأوقات المضبوطة (مثلا كل ٣٠ دقيقة). لو الأذان شغّال وقتها، بتستنى لحد ما يخلص وتتشغّل مرة واحدة بس.</p>
     <div class="row" style="margin-bottom:12px">
       <span class="lbl">تذكير صلاة الضحى</span>
       <label class="switch">
@@ -1938,8 +2002,8 @@ body #view-mushaf .m-n-num { position: absolute; left: 50%; top: 50%; transform:
       </label>
     </div>
     <p class="muted" style="margin:-4px 0 10px">الأيام البيض هي ١٣ و١٤ و١٥ من الشهر الهجري، والتذكير بييجي بالليل قبل اليوم.</p>
-    <p class="muted" style="margin:6px 0 8px">الأذان والتذكيرات لكل صلاة. شيل العلامة من الصلاة اللي مش عايزها:</p>
-    <div class="per-grid">
+    <p class="muted" style="margin:6px 0 8px" hidden>الأذان والتذكيرات لكل صلاة. شيل العلامة من الصلاة اللي مش عايزها:</p>
+    <div class="per-grid" hidden style="display:none">
       <label><input type="checkbox" data-per="fajr">الفجر</label>
       <label><input type="checkbox" data-per="dhuhr">الظهر</label>
       <label><input type="checkbox" data-per="asr">العصر</label>
@@ -2675,10 +2739,10 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       history.pushState({ v: name, g: g || null }, "");
     } catch (e) {}
   }
-  var views = { prayer: document.getElementById("view-prayer"), mushaf: document.getElementById("view-mushaf"), adhkar: document.getElementById("view-adhkar"), sira: document.getElementById("view-sira"), tasbeeh: document.getElementById("tasbeeh"), settings: document.getElementById("view-settings") };
+  var views = { prayer: document.getElementById("view-prayer"), mushaf: document.getElementById("view-mushaf"), adhkar: document.getElementById("view-adhkar"), sira: document.getElementById("view-sira"), fajr: document.getElementById("view-fajr"), tasbeeh: document.getElementById("tasbeeh"), settings: document.getElementById("view-settings") };
   function showView(name, fromPop) {
     if (!fromPop) navPush(name, null);
-    var titles = { prayer: "زاد المؤمن", mushaf: "المصحف", adhkar: "الأذكار", sira: "السيرة النبوية", tasbeeh: "المسبحة", settings: "الإعدادات" };
+    var titles = { prayer: "زاد المؤمن", mushaf: "المصحف", adhkar: "الأذكار", sira: "السيرة النبوية", fajr: "رجالة الفجر", tasbeeh: "المسبحة", settings: "الإعدادات" };
     document.getElementById("pageTitle").textContent = titles[name] || "";
     document.getElementById("clockBox").hidden = name !== "prayer";
     document.body.classList.toggle("sub", name !== "prayer");
@@ -2735,22 +2799,24 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   if (AppPl && typeof AppPl.addListener === "function") AppPl.addListener("backButton", window.__handleBack);
 
   // ---------- Mushaf (full Quran, Tanzil text) ----------
+  var MQ_Z = [0.8, 0.9, 1, 1.08, 1.16, 1.25, 1.35, 1.5, 1.7, 1.9, 2.2];
+  var MQ_Z_OLD = [0.8, 0.9, 1, 1.15, 1.3, 1.5];
   var MQ = { p: 1, f: 2, bm: [] };
   try {
     var mqRaw = JSON.parse(localStorage.getItem("mushaf-v1") || "null");
     if (mqRaw) {
       if (mqRaw.p >= 1 && mqRaw.p <= 604) MQ.p = mqRaw.p | 0;
-      if (mqRaw.f >= 0 && mqRaw.f <= 5) MQ.f = mqRaw.f | 0;
+      if (typeof mqRaw.z === "number") { var zi = 0; for (var zk = 0; zk < MQ_Z.length; zk++) if (Math.abs(MQ_Z[zk] - mqRaw.z) < Math.abs(MQ_Z[zi] - mqRaw.z)) zi = zk; MQ.f = zi; }
+      else if (mqRaw.f >= 0 && mqRaw.f <= 5) { var oz = MQ_Z_OLD[mqRaw.f | 0], zj = 0; for (var zl = 0; zl < MQ_Z.length; zl++) if (Math.abs(MQ_Z[zl] - oz) < Math.abs(MQ_Z[zj] - oz)) zj = zl; MQ.f = zj; }
       if (Array.isArray(mqRaw.bm)) MQ.bm = mqRaw.bm.filter(function (x) { return x >= 1 && x <= 604; });
     }
   } catch (e) {}
   var MQ_DIG = "٠١٢٣٤٥٦٧٨٩";
   var MQ_BASMALA = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
   function arNum(n) { return String(n).replace(/[0-9]/g, function (d) { return MQ_DIG[+d]; }); }
-  function saveMQ() { try { localStorage.setItem("mushaf-v1", JSON.stringify({ p: MQ.p, f: MQ.f, bm: MQ.bm })); } catch (e) {} }
+  function saveMQ() { try { localStorage.setItem("mushaf-v1", JSON.stringify({ p: MQ.p, f: MQ.f, z: MQ_Z[MQ.f], bm: MQ.bm })); } catch (e) {} }
   function mqMsg(t) { document.getElementById("mqMsg").textContent = t || ""; }
 
-  var MQ_Z = [0.8, 0.9, 1, 1.15, 1.3, 1.5];
   var WD = { goal: 2, day: "", pages: [], conf: "" };
   try {
     var wr = JSON.parse(localStorage.getItem("wird-v1") || "null");
@@ -2936,7 +3002,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     if (/^\d{2}:\d{2}$/.test(wdTimeEl.value)) { state.wirdTime = wdTimeEl.value; save(); }
   });
 
-  var MQ_MIN_PX = 18, MQ_MAX_PX = 40, MQ_SHOW_MAX = 64;
+  var MQ_MIN_PX = 18, MQ_MAX_PX = 40, MQ_SHOW_MAX = 90;
   // Move the header's back and menu buttons into the Mushaf bar (the app header is hidden in the Mushaf).
   (function moveBarButtons() {
     var bar = document.querySelector("#view-mushaf .mq-bar");
@@ -3124,7 +3190,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       var sel = window.getSelection && window.getSelection();
       if (sel && !sel.isCollapsed) return;
       var f = e.clientX / Math.max(1, window.innerWidth);
-      if (f < 0.25) goPage(MQ.p + 1);       // left edge = next, same as swipe left
+      if (f < 0.25) goPage(MQ.p + 1);       // left edge = next, same side as a left-to-right swipe
       else if (f > 0.75) goPage(MQ.p - 1);  // right edge = previous
       else toggleChrome();
     });
@@ -3174,32 +3240,42 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var st = document.getElementById("quranRadioState");
     var icoP = document.getElementById("rrIcoPlay"), icoS = document.getElementById("rrIcoPause");
     if (!btn || !au) return;
-    au.src = "https://stream.radiojar.com/8s5u5tpdtwzuv";
-    function setPlaying(on) {
+    var RADIO_URL = "https://service.webvideocore.net/CL1olYogIrDWvwqiIKK7eCxOS4PStqG9DuEjAr2ZjZQtvS3d4y9r0cvRhvS17SGN/a_7a4vuubc6mo8.m3u8"; // إذاعة القرآن الكريم من القاهرة: البث ده مكتوب في كود موقع الإذاعة misrquran.gov.eg (على سيرفر بث خارجي)
+    var NP = function () { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdhanNotifier) || null; };
+    var on = false;
+    function setPlaying(v) {
+      on = !!v;
       icoP.hidden = on; icoS.hidden = !on;
-      document.body.classList.toggle("rr-on", !!on);
+      document.body.classList.toggle("rr-on", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
       btn.setAttribute("aria-label", on ? "إيقاف" : "تشغيل");
     }
+    var np0 = NP();
+    if (np0 && np0.addListener) np0.addListener("radioStopped", function () { setPlaying(false); st.textContent = "البث وقف، جرّب تاني"; });
     btn.addEventListener("click", function () {
-      if (!au.paused) { au.pause(); setPlaying(false); st.textContent = "وقفت البث"; return; }
+      var np = NP();
+      if (on) {
+        if (np) np.radioStop().catch(function () {}); else au.pause();
+        setPlaying(false); st.textContent = "وقفت البث"; return;
+      }
       st.textContent = "جاري التحميل...";
-      var pr = au.play();
-      if (pr && pr.then) pr.then(function () { setPlaying(true); st.textContent = "بث مباشر الآن"; },
-        function () { setPlaying(false); st.textContent = "البث مش شغال دلوقتي، جرّب تاني"; });
+      if (np && np.radioStart) {
+        np.radioStart({ url: RADIO_URL }).then(function () { setPlaying(true); st.textContent = "بث مباشر الآن"; },
+          function () { setPlaying(false); st.textContent = "البث مش متاح دلوقتي، جرّب تاني"; });
+      } else {
+        au.src = RADIO_URL;
+        var pr = au.play();
+        if (pr && pr.then) pr.then(function () { setPlaying(true); st.textContent = "بث مباشر الآن"; },
+          function () { setPlaying(false); st.textContent = "البث مش متاح هنا، جرّب من التطبيق"; });
+      }
     });
-    au.addEventListener("error", function () { setPlaying(false); st.textContent = "البث مش متاح دلوقتي، جرّب تاني"; });
-    au.addEventListener("ended", function () { setPlaying(false); st.textContent = "بث مباشر"; });
+    au.addEventListener("error", function () { if (!NP()) { setPlaying(false); st.textContent = "البث مش متاح دلوقتي، جرّب تاني"; } });
   })();
 
   // اختصارات الصفحة الرئيسية: رجالة الفجر تفتح الكارت، والقرآن يفتح المصحف
   (function () {
     var tf = document.getElementById("tileFajr"), tq = document.getElementById("tileQuran"), camp = document.getElementById("fajrCampaign");
-    if (tf && camp) tf.addEventListener("click", function () {
-      camp.hidden = !camp.hidden;
-      tf.setAttribute("aria-expanded", camp.hidden ? "false" : "true");
-      if (!camp.hidden) camp.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    if (tf) tf.addEventListener("click", function () { showView("fajr"); });
     if (tq) tq.addEventListener("click", function () { var o = document.getElementById("mqHomeOpen"); if (o) o.click(); });
     var ts = document.getElementById("tileSira");
     if (ts) ts.addEventListener("click", function () { showView("sira"); });
@@ -3219,10 +3295,10 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       "من صلى الفجر في جماعة فهو في ذمة الله. (رواه مسلم)",
       "ركعتا الفجر خير من الدنيا وما فيها. (رواه مسلم)",
       "بشّر المشّائين في الظلم إلى المساجد بالنور التام يوم القيامة. (رواه أبو داود والترمذي)",
-      "اللي بيصلي الفجر بيبدأ يومه بالبركة. خليك أول واحد في المسجد النهارده.",
+      "خليك من الأوائل في المسجد النهارده بإذن الله.",
       "الفجر أثقل صلاة على المنافقين، فاجعلها أول فرحتك بالخير.",
       "كل يوم بتصحى فيه للفجر هو كسب ليك قبل ما الدنيا تشغلك.",
-      "قوم بدري، وربنا يفتحلك أبواب الرزق والبركة في يومك."
+      "قوم بدري واجعل أول يومك مع الصلاة. ربنا يعينك ويثبتك."
     ];
     var toggle = document.getElementById("fajrToggle");
     if (!toggle) return;
@@ -3324,7 +3400,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (Date.now() - st > 450) window.__mqPressAt = Date.now();
       var sel = window.getSelection && window.getSelection();
       if (skip || (sel && !sel.isCollapsed)) return;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) { window.__mqSwipeAt = Date.now(); goPage(dx < 0 ? MQ.p + 1 : MQ.p - 1); }
+      if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) { window.__mqSwipeAt = Date.now(); goPage(dx > 0 ? MQ.p + 1 : MQ.p - 1); }
     }, { passive: true });
   })();
 
@@ -4234,7 +4310,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   });
 
   // ---------- Helpers for the new reminders ----------
-  function prayerOn(k) { return !state.adhanPer || state.adhanPer[k] !== false; }
+  function prayerOn(k) { return true; } // adhan and reminders are automatic for all five prayers (the per-prayer choice was removed)
   // Returns a label if that day is a recommended fast (Mon, Thu, or white days 13-15 Hijri), else null
   function fastLabelFor(dateObj) {
     var wd = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "Africa/Cairo" }).format(dateObj);
@@ -5792,6 +5868,149 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     }
   };
   if ($("ayahShare")) $("ayahShare").addEventListener("click", function () { window.zaidShare.ayah(+$("ayahPick").value || 0); });
+})();
+
+/* ---- Quran recitations: reciter data comes live from the mp3quran.net API; audio streams or downloads only when the user taps ---- */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var selR = $("recReciter"), selM = $("recMoshaf"), selS = $("recSurah"), info = $("recInfo"), bPlay = $("recPlay"), bDl = $("recDl"), bDel = $("recDel"), au = $("recAudio");
+  if (!selR || !bPlay) return;
+  var IDS = [92, 102, 112]; // Yasser Al-Dosari, Maher Al-Muaiqly, Minshawi (ids from the mp3quran.net API)
+  var DATA = [];
+  var CAP = window.Capacitor, FS = CAP && CAP.Plugins && CAP.Plugins.Filesystem;
+  var native = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform() && FS);
+  var KEY = "rec-files-v1", files = {};
+  try { files = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(files)); } catch (e) {} }
+  function pad(n) { return ("00" + n).slice(-3); }
+  function toast(t) { info.textContent = t; }
+  function mb(b) { return (b / 1048576).toFixed(1).replace(/\.0$/, "") + " ميجا"; }
+  function cur() {
+    var r = DATA[selR.selectedIndex]; if (!r) return null;
+    var m = r.moshaf[selM.selectedIndex]; if (!m) return null;
+    var n = parseInt(selS.value, 10); if (!n) return null;
+    return { r: r, m: m, n: n, url: m.server + pad(n) + ".mp3", key: m.id + "-" + pad(n) };
+  }
+  function fill(sel, arr, label) { sel.innerHTML = ""; arr.forEach(function (x, i) { var o = document.createElement("option"); o.value = x.v; o.textContent = x.t; sel.appendChild(o); }); }
+  function fillMoshaf() {
+    var r = DATA[selR.selectedIndex]; if (!r) return;
+    fill(selM, r.moshaf.map(function (m, i) { return { v: i, t: m.name + " (" + m.surah_total + " سورة)" }; }));
+    fillSurah();
+  }
+  function fillSurah() {
+    var r = DATA[selR.selectedIndex]; var m = r && r.moshaf[selM.selectedIndex]; if (!m) return;
+    var names = (window.MUSHAF_DATA && MUSHAF_DATA.S) || [];
+    fill(selS, String(m.surah_list).split(",").map(function (x) { var n = parseInt(x, 10); return { v: n, t: n + ". " + (names[n - 1] ? names[n - 1].name : "") }; }));
+    refresh();
+  }
+  var sizeCache = {};
+  function refresh() {
+    var c = cur(); if (!c) return;
+    var have = !!files[c.key];
+    bDel.hidden = !have; bDl.hidden = have || !native;
+    info.textContent = have ? "محمّلة على جهازك" : "";
+    if (!have && !(c.url in sizeCache)) {
+      sizeCache[c.url] = null;
+      fetch(c.url, { method: "HEAD" }).then(function (r) { var l = parseInt(r.headers.get("content-length") || "0", 10); sizeCache[c.url] = l || 0; if (cur() && cur().url === c.url) showSize(c); }).catch(function () { sizeCache[c.url] = 0; });
+    } else if (!have) showSize(c);
+  }
+  function showSize(c) { var z = sizeCache[c.url]; info.textContent = z ? "حجم الملف: " + mb(z) : ""; bDl.textContent = z ? "تحميل (" + mb(z) + ")" : "تحميل"; }
+  function load() {
+    var cached = null; try { cached = JSON.parse(localStorage.getItem("rec-api-v1") || "null"); } catch (e) {}
+    function use(list) { DATA = list; fill(selR, list.map(function (r, i) { return { v: i, t: r.name }; })); fillMoshaf(); }
+    if (cached && cached.length) use(cached);
+    Promise.all(IDS.map(function (id) { return fetch("https://www.mp3quran.net/api/v3/reciters?language=ar&reciter=" + id).then(function (r) { return r.json(); }).then(function (d) { return d.reciters && d.reciters[0]; }); }))
+      .then(function (list) {
+        list = list.filter(function (r) { return r && r.moshaf && r.moshaf.length; });
+        if (!list.length) return;
+        try { localStorage.setItem("rec-api-v1", JSON.stringify(list)); } catch (e) {}
+        if (!cached) use(list);
+      }).catch(function () { if (!cached) info.textContent = "محتاج إنترنت عشان تظهر قايمة القرّاء أول مرة"; });
+  }
+  function srcFor(c, cb) {
+    if (files[c.key] && native) {
+      FS.getUri({ path: files[c.key], directory: "DATA" }).then(function (u) { cb(CAP.convertFileSrc ? CAP.convertFileSrc(u.uri) : u.uri); }, function () { delete files[c.key]; save(); refresh(); cb(c.url); });
+    } else cb(c.url);
+  }
+  bPlay.addEventListener("click", function () {
+    var c = cur(); if (!c) return;
+    if (!au.hidden && !au.paused) { au.pause(); bPlay.textContent = "تشغيل"; return; }
+    srcFor(c, function (u) { au.hidden = false; au.src = u; var p = au.play(); bPlay.textContent = "إيقاف"; if (p && p.catch) p.catch(function () { bPlay.textContent = "تشغيل"; toast("مقدرناش نشغّل التلاوة، اتأكد من الإنترنت"); }); });
+  });
+  au.addEventListener("ended", function () { bPlay.textContent = "تشغيل"; });
+  au.addEventListener("pause", function () { bPlay.textContent = "تشغيل"; });
+  au.addEventListener("play", function () { bPlay.textContent = "إيقاف"; });
+  bDl.addEventListener("click", function () {
+    var c = cur(); if (!c || !native) return;
+    var path = "recitations/" + c.key + ".mp3";
+    if (!/^https:\/\/([a-z0-9-]+\.)*mp3quran\.net\/[A-Za-z0-9_\/.-]+\.mp3$/.test(c.url)) { toast("رابط غير مسموح"); return; }
+    var z = sizeCache[c.url];
+    if (z > 50 * 1048576 && !window.confirm("الملف كبير (" + mb(z) + "). تكمل التحميل؟")) return;
+    bDl.disabled = true; bPlay.disabled = true; info.textContent = "بنحمّل... ممكن ياخد وقت، سيب الشاشة مفتوحة";
+    FS.downloadFile({ url: c.url, path: path, directory: "DATA", recursive: true }).then(function () {
+      files[c.key] = path; save(); bDl.disabled = false; bPlay.disabled = false; refresh(); toast("اتحمّلت السورة");
+    }, function () {
+      FS.deleteFile({ path: path, directory: "DATA" }).catch(function () {});
+      bDl.disabled = false; bPlay.disabled = false; toast("التحميل فشل (النت أو المساحة)، حاول تاني");
+    });
+  });
+  bDel.addEventListener("click", function () {
+    var c = cur(); if (!c || !files[c.key]) return;
+    FS.deleteFile({ path: files[c.key], directory: "DATA" }).catch(function () {}).then(function () { delete files[c.key]; save(); refresh(); toast("اتحذف التحميل"); });
+  });
+  selR.addEventListener("change", fillMoshaf); selM.addEventListener("change", fillSurah); selS.addEventListener("change", refresh);
+  load();
+})();
+
+/* ---- Tafsir: one surah at a time, downloaded when the user taps, verbatim from spa5k/tafsir_api ---- */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ed = $("tafEd"), sur = $("tafSurah"), info = $("tafInfo"), bShow = $("tafShow"), bDel = $("tafDel"), body = $("tafBody");
+  if (!ed || !sur) return;
+  var CAP = window.Capacitor, FS = CAP && CAP.Plugins && CAP.Plugins.Filesystem;
+  var native = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform() && FS);
+  var BASE = "https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/";
+  var KEY = "taf-files-v1", files = {};
+  try { files = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(files)); } catch (e) {} }
+  var names = (window.MUSHAF_DATA && MUSHAF_DATA.S) || [];
+  names.forEach(function (x, i) { var o = document.createElement("option"); o.value = i + 1; o.textContent = (i + 1) + ". " + x.name; sur.appendChild(o); });
+  function key() { return ed.value + "-" + sur.value; }
+  function refresh() { var have = !!files[key()]; bDel.hidden = !have; info.textContent = have ? "محمّل على جهازك" : ""; body.style.display = "none"; }
+  function render(list) {
+    body.textContent = "";
+    list.forEach(function (a) {
+      var p = document.createElement("p"); p.style.margin = "0 0 10px";
+      if (a.ayah) { var b = document.createElement("strong"); b.textContent = "آية " + a.ayah + ": "; p.appendChild(b); }
+      p.appendChild(document.createTextNode(String(a.text || "")));
+      body.appendChild(p);
+    });
+    body.style.display = "block"; body.scrollTop = 0;
+  }
+  function fromNet() {
+    info.textContent = "بنحمّل...";
+    return fetch(BASE + ed.value + "/" + sur.value + ".json").then(function (r) { if (!r.ok) throw 0; return r.text(); }).then(function (t) {
+      var list = JSON.parse(t); if (!Array.isArray(list) || !list.length) throw 0;
+      if (native) {
+        var path = "tafsir/" + key() + ".json";
+        return FS.writeFile({ path: path, directory: "DATA", data: t, encoding: "utf8", recursive: true }).then(function () { files[key()] = path; save(); return list; });
+      }
+      return list;
+    });
+  }
+  bShow.addEventListener("click", function () {
+    var k = key(), got;
+    if (files[k] && native) {
+      got = FS.readFile({ path: files[k], directory: "DATA", encoding: "utf8" }).then(function (r) { return JSON.parse(r.data); }).catch(function () { delete files[k]; save(); return fromNet(); });
+    } else got = fromNet();
+    got.then(function (list) { render(list); refresh(); body.style.display = "block"; info.textContent = files[key()] ? "محمّل على جهازك" : ""; }, function () { info.textContent = "مقدرناش نجيب التفسير، اتأكد من الإنترنت وحاول تاني"; });
+  });
+  bDel.addEventListener("click", function () {
+    var k = key(); if (!files[k]) return;
+    FS.deleteFile({ path: files[k], directory: "DATA" }).catch(function () {}).then(function () { delete files[k]; save(); refresh(); });
+  });
+  ed.addEventListener("change", refresh); sur.addEventListener("change", refresh);
+  refresh();
 })();
 </script>
 </body>
