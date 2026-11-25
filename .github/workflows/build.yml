@@ -29,6 +29,7 @@ jobs:
           cp -r adhan www/
           cp -r alarm www/
           cp -r tones www/
+          cp -r fonts www/
           sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
           grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
 
