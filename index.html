@@ -1323,6 +1323,37 @@ body.sel-play.mq-on #view-mushaf.mq-full { height: calc(100vh - var(--sp-h, 112p
 }
 
 #mqText { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* focus layout A (original proposal): one tall card, ring below text */
+.fm > .card:first-child { display: none; }
+.fm.sec > .card:first-child { display: block; }
+.fc-top { gap: 6px; }
+.fc-trow { display: flex; align-items: center; justify-content: center; position: relative; }
+.fc-title { margin: 0; font-size: 1.05rem; }
+.fc-more { position: absolute; inset-inline-start: 0; width: 36px; height: 32px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; font-size: 1.1rem; }
+.fc-menu { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.fc-menu button { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 10px; padding: 5px 10px; font: inherit; font-size: 0.8rem; }
+.fc-menu button:disabled { opacity: 0.45; }
+.fm .fc-card { display: flex; flex-direction: column; align-items: center; padding: 12px 12px 10px; gap: 6px; overflow: hidden; }
+.fc-read { display: flex; flex-direction: column; align-items: center; flex: 1 1 auto; min-height: 0; gap: 10px; overflow-y: auto; width: 100%; }
+.fc-read > :first-child { margin-top: auto; }
+.fc-read > :last-child { margin-bottom: auto; }
+.fc-t { font-size: calc(1.7rem * var(--fs, 1)); line-height: 2.15; }
+.fc-dock { flex: none; display: grid; justify-items: center; gap: 4px; }
+.fc-dock .fc-ring { width: 96px; height: 96px; }
+.fc-dock .fc-ring::before { inset: 8px; }
+.fc-dock .fc-ring b { font-size: 1.7rem; }
+.fc-dock .fc-ring span { display: block; font-size: 0.75rem; }
+.fc-bottom { flex-wrap: nowrap; }
+.fc-bottom button { flex: 1; min-width: 0; height: 44px; font-size: 0.9rem; }
+.fc-bottom button.nx { flex: 2.2; }
+@media (max-height: 700px) {
+  .fc-dock .fc-ring { width: 70px; height: 70px; }
+  .fc-dock .fc-ring::before { inset: 6px; }
+  .fc-dock .fc-ring b { font-size: 1.3rem; }
+  .fc-hint { display: none; }
+  .fc-t { font-size: calc(1.5rem * var(--fs, 1)); line-height: 2.05; }
+}
 </style>
 </head>
 <body>
@@ -3787,7 +3818,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
   el.rsClose.addEventListener("click", closeReader);
   el.rsScrim.addEventListener("click", closeReader);
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeReader(); });
-  var adhMode = "focus";
+  var adhMode = "focus"; var fcMenu = false;
   try { var _am = localStorage.getItem("adhkar-mode"); if (_am === "list" || _am === "focus") adhMode = _am; } catch (e) {}
   var focusIdx = {};
   // Quran passages inside the adhkar: surah number, first and last ayah, and whether the item is only part of the ayah text.
@@ -3847,9 +3878,20 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var item = cat.items[cur], id = key0 + ":" + cur;
     var n = counts.c[id] || 0, T = tgt(item), done = n >= T;
 
+    function mk(label, cls, fn, aria) {
+      var b = document.createElement("button"); b.type = "button"; if (cls) b.className = cls;
+      b.textContent = label; if (aria) b.setAttribute("aria-label", aria);
+      b.addEventListener("click", function (e) { e.stopPropagation(); fn(b); }); return b;
+    }
+    var vw2 = document.getElementById("view-adhkar");
     var top = document.createElement("div"); top.className = "fc-top";
+    var trow = document.createElement("div"); trow.className = "fc-trow";
+    var ttl = document.createElement("h2"); ttl.className = "fc-title"; ttl.textContent = "أذكار " + (cat.label || "");
+    var mbtn = mk("\u22EF", "fc-more", function () { fcMenu = !fcMenu; renderAdhkar(); }, "المزيد");
+    trow.appendChild(ttl); trow.appendChild(mbtn); top.appendChild(trow);
     var pos = document.createElement("p"); pos.className = "fc-pos";
     pos.textContent = "الذكر " + arNum(cur + 1) + " من " + arNum(N) + " · اكتمل " + arNum(doneCount) + " من " + arNum(N);
+    top.appendChild(pos);
     var seg = document.createElement("div"); seg.className = "fc-seg"; seg.setAttribute("aria-hidden", "true");
     cat.items.forEach(function (it, i) {
       var g = document.createElement("i");
@@ -3857,7 +3899,16 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       if (i === cur) g.className = "c";
       seg.appendChild(g);
     });
-    top.appendChild(pos); top.appendChild(seg);
+    top.appendChild(seg);
+    if (fcMenu) {
+      var mn = document.createElement("div"); mn.className = "fc-menu";
+      mn.appendChild(mk("\u203A السابق", "", function () { focusIdx[key0] = Math.max(0, cur - 1); renderAdhkar(); }, "الذكر السابق")).disabled = cur === 0;
+      mn.appendChild(mk("إعادة العدّ", "", function () { delete counts.c[id]; saveCounts(); renderAdhkar(); }, "إعادة العدّ"));
+      mn.appendChild(mk("صورة", "", function () { if (window.zaidShare) window.zaidShare.dhikr(item.t, item.src || "", cat.label || ""); }, "شارك الذكر كصورة"));
+      mn.appendChild(mk("الأقسام", "", function () { if (vw2) vw2.classList.toggle("sec"); fitFocus(); }, "اختيار القسم"));
+      mn.appendChild(mk("عرض القائمة", "", function () { setAdhMode("list"); }, "عرض القائمة"));
+      top.appendChild(mn);
+    }
     el.adhkarList.appendChild(top);
 
     var card = document.createElement("article");
@@ -3877,10 +3928,11 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     rin.innerHTML = "<b></b><span></span>";
     rin.firstChild.textContent = done ? "\u2713" : arNum(n);
     rin.lastChild.textContent = done ? "تم" : "من " + arNum(T);
-    ring.appendChild(rin); var mini = document.createElement("div"); mini.className = "fc-mini"; mini.appendChild(ring); card.appendChild(mini);
+    ring.appendChild(rin);
+    var dock = document.createElement("div"); dock.className = "fc-dock"; dock.appendChild(ring);
     var hint = document.createElement("p"); hint.className = "fc-hint";
     hint.textContent = done ? "خلصت العدد، انتقل للذكر التالي" : "اضغط في أي مكان في البطاقة للعدّ";
-    mini.appendChild(hint);
+    dock.appendChild(hint); card.appendChild(dock);
     function bump() {
       var c0 = counts.c[id] || 0;
       if (c0 >= T) return;
@@ -3890,43 +3942,26 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     card.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bump(); } });
     el.adhkarList.appendChild(card);
 
-    function mk(label, cls, fn, aria) {
-      var b = document.createElement("button"); b.type = "button"; if (cls) b.className = cls;
-      b.textContent = label; if (aria) b.setAttribute("aria-label", aria);
-      b.addEventListener("click", function (e) { e.stopPropagation(); fn(b); }); return b;
-    }
-    var bar1 = document.createElement("div"); bar1.className = "fc-bar";
+    var bar1 = document.createElement("div"); bar1.className = "fc-bar fc-bottom";
     bar1.appendChild(mk("نسخ", "", function (b) { copyText(item.t, b); }, "نسخ الذكر"));
     bar1.appendChild(mk("مشاركة", "", function () { shareText(item.t); }, "مشاركة الذكر"));
-    bar1.appendChild(mk("صورة", "", function () { if (window.zaidShare) window.zaidShare.dhikr(item.t, item.src || "", cat.label || ""); }, "شارك الذكر كصورة"));
-    bar1.appendChild(mk("إعادة", "", function () { delete counts.c[id]; saveCounts(); renderAdhkar(); }, "إعادة العدّ"));
-    el.adhkarList.appendChild(bar1);
-    var sticky = document.createElement("div"); sticky.className = "fc-sticky";
-    var bar2 = document.createElement("div"); bar2.className = "fc-bar";
-    var prev = mk("\u203A قبل", "", function () { focusIdx[key0] = Math.max(0, cur - 1); renderAdhkar(); });
-    prev.disabled = cur === 0;
-    var cnt = mk(done ? "تم \u2713" : "عُدّ  " + arNum(n) + " من " + arNum(T), "ct", bump, "عدّ الذكر");
-    cnt.disabled = done;
-    var next = mk("بعد \u2039", done ? "nx" : "nx2", function () { focusIdx[key0] = Math.min(N - 1, cur + 1); renderAdhkar(); });
+    var next = mk("الذكر التالي \u2039", "nx", function () { focusIdx[key0] = Math.min(N - 1, cur + 1); renderAdhkar(); });
     next.disabled = cur === N - 1;
-    bar2.appendChild(prev); bar2.appendChild(cnt); bar2.appendChild(next);
-    sticky.appendChild(bar2);
-    el.adhkarList.appendChild(sticky);
+    bar1.appendChild(next);
+    el.adhkarList.appendChild(bar1);
     el.adhkarBar.style.width = (N ? Math.round(doneCount / N * 100) : 0) + "%";
     el.adhkarProgress.textContent = "اكتمل " + doneCount + " من " + N + " ذكر في " + cat.label;
     fitFocus();
   }
   function fitFocus() {
-    var c = document.querySelector("#adhkarList .fc-card"), rd = c && c.querySelector(".fc-read");
-    if (!rd || !document.body.classList.contains("fm-on")) return;
+    var c = document.querySelector("#adhkarList .fc-card");
+    if (!c || !document.body.classList.contains("fm-on")) return;
     window.scrollTo(0, 0);
-    rd.style.maxHeight = "none";
+    c.style.height = "auto";
     var tabs = document.querySelector(".tabs"), th = tabs ? tabs.offsetHeight : 64;
-    var bars = 0; [].forEach.call(document.querySelectorAll("#adhkarList > .fc-bar, #adhkarList > .fc-sticky"), function (b) { bars += b.offsetHeight + 8; });
-    var cr = c.getBoundingClientRect(), rr = rd.getBoundingClientRect();
-    var below = cr.bottom - rr.bottom;
-    var avail = window.innerHeight - th - bars - rr.top - below - 14;
-    rd.style.maxHeight = Math.max(120, avail) + "px";
+    var bar = document.querySelector("#adhkarList > .fc-bottom"), bh = bar ? bar.offsetHeight + 8 : 0;
+    var top = c.getBoundingClientRect().top;
+    c.style.height = Math.max(240, window.innerHeight - th - bh - top - 14) + "px";
   }
   window.addEventListener("resize", function () { fitFocus(); });
   function renderAdhkar() {
