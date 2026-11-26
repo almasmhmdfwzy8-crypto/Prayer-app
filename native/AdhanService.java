@@ -515,6 +515,28 @@ public class AdhanService extends Service {
         return a > b ? a / b : b / a;
     }
 
+    private static boolean isHex(String c) {
+        if (c == null || c.length() != 7 || c.charAt(0) != '#') return false;
+        try { Long.parseLong(c.substring(1), 16); return true; } catch (NumberFormatException e) { return false; }
+    }
+
+    private static double contrast(int a, int b) {
+        double x = lum(a) + 0.05, y = lum(b) + 0.05;
+        return x > y ? x / y : y / x;
+    }
+
+    /** A frame line only has to be seen (3:1). Lighten or darken toward the readable side until it is. */
+    private static int visibleOn(int c, int card) {
+        boolean light = lum(card) < 0.4;
+        for (int i = 0; i < 8 && contrast(c, card) < 3.0; i++) {
+            int r = (c >> 16) & 255, g = (c >> 8) & 255, bl = c & 255;
+            int t = light ? 255 : 0;
+            r += (t - r) / 4; g += (t - g) / 4; bl += (t - bl) / 4;
+            c = 0xFF000000 | (r << 16) | (g << 8) | bl;
+        }
+        return c;
+    }
+
     private int textOn(int bg) {
         double r = lin(((bg >> 16) & 0xFF) / 255.0), g = lin(((bg >> 8) & 0xFF) / 255.0), b = lin((bg & 0xFF) / 255.0);
         double lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -568,13 +590,28 @@ public class AdhanService extends Service {
             rv.setTextViewText(R.id.pn_name, String.valueOf(nx[0]));
             rv.setChronometerCountDown(R.id.pn_time, true);
             rv.setChronometer(R.id.pn_time, SystemClock.elapsedRealtime() + (at - System.currentTimeMillis()), null, true);
-            if (colored) {
-                // The card stays dark. The user's colour only tints the countdown digits.
-                int dig = colorOf(color);
-                // Card is fixed #1B222C. Use the chosen colour only when it reads on it (contrast 4.5 or more), else the default gold.
-                if (contrastOnDark(dig) < 4.5) dig = 0xFFF0CF7F;
-                rv.setTextColor(R.id.pn_time, dig);
+            String cardS = sp.getString("ncard", ""), frmS = sp.getString("nfrm", ""), digS = sp.getString("ndig", "");
+            boolean themed = isHex(cardS) && isHex(digS);
+            int card = themed ? colorOf(cardS) : 0xFF1B222C;
+            int digDefault = 0xFFF0CF7F;
+            int dig = digDefault;
+            if (themed) dig = colorOf(digS);
+            else if (colored) dig = colorOf(color);
+            // digits must read on the card (contrast 4.5 or more), else the readable gold/white fallback
+            if (contrast(dig, card) < 4.5) dig = contrast(digDefault, card) >= 4.5 ? digDefault : (lum(card) > 0.4 ? 0xFF111111 : 0xFFFFFFFF);
+            int frameName = 0xFF3F9D80, frameTime = 0xFFC9A24D;
+            if (themed) {
+                frameTime = dig;
+                frameName = isHex(frmS) ? colorOf(frmS) : dig;
             }
+            frameName = visibleOn(frameName, card);
+            frameTime = visibleOn(frameTime, card);
+            rv.setInt(R.id.pn_root, "setBackgroundColor", card);
+            rv.setInt(R.id.pn_name_frame, "setColorFilter", frameName);
+            rv.setInt(R.id.pn_time_frame, "setColorFilter", frameTime);
+            rv.setTextColor(R.id.pn_name, textOn(card));
+            rv.setTextColor(R.id.pn_time, dig);
+            rv.setTextColor(R.id.pn_label, themed ? dig : 0xFFB7A06A);
             b.setCustomContentView(rv).setCustomBigContentView(rv);
             b.setShowWhen(false);
         } else {

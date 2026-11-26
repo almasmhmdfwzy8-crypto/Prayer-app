@@ -33,6 +33,9 @@ public class AdhanNotifierPlugin extends Plugin {
         String nstyle = call.getString("style", "full");
         String npos = call.getString("pos", "bar");
         String ncolor = call.getString("color", "");
+        String ncard = call.getString("card", "");
+        String nfrm = call.getString("frame", "");
+        String ndig = call.getString("digits", "");
         boolean salOn = Boolean.TRUE.equals(call.getBoolean("salOn", false));
         boolean adhanOn = !Boolean.FALSE.equals(call.getBoolean("adhanOn", true));
         String adhanKey = call.getString("adhanKey", "makkah1");
@@ -45,6 +48,7 @@ public class AdhanNotifierPlugin extends Plugin {
         String salSound = call.getString("salSound", "default");
         getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit()
                 .putString("times", times).putString("nstyle", nstyle).putString("npos", npos).putString("ncolor", ncolor)
+                .putString("ncard", ncard).putString("nfrm", nfrm).putString("ndig", ndig)
                 .putBoolean("salOn", salOn).putInt("salMin", salMin).putString("salSound", salSound)
                 .putBoolean("adhanOn", adhanOn).putString("adhanKey", adhanKey)
                 .putString("asr", asr).putString("adj", adj).putString("per", per)
@@ -54,6 +58,29 @@ public class AdhanNotifierPlugin extends Plugin {
         }
         startService();
         call.resolve();
+    }
+
+    /** Copies the installed APK (this exact version) into cache/updates so the share sheet can send it. No download, works offline. */
+    @PluginMethod
+    public void copyApk(PluginCall call) {
+        try {
+            File src = new File(getContext().getApplicationInfo().sourceDir);
+            File dir = new File(getContext().getCacheDir(), "updates");
+            if (!dir.exists() && !dir.mkdirs()) { call.reject("no cache dir"); return; }
+            File dst = new File(dir, "zaid-share.apk");
+            InputStream in = new java.io.FileInputStream(src);
+            FileOutputStream out = new FileOutputStream(dst);
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            out.close();
+            in.close();
+            com.getcapacitor.JSObject r = new com.getcapacitor.JSObject();
+            r.put("size", dst.length());
+            call.resolve(r);
+        } catch (Exception e) {
+            call.reject("copy failed");
+        }
     }
 
     private void startService() {
