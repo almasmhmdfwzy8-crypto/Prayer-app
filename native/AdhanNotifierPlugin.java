@@ -2,6 +2,7 @@ package __PKG__;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.audiofx.LoudnessEnhancer;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -246,9 +247,33 @@ public class AdhanNotifierPlugin extends Plugin {
 
     // ---------- Quran Radio (Cairo): official HLS stream, audio only (video track disabled), started only by the user ----------
     private ExoPlayer radio;
+    private LoudnessEnhancer radioLe;
+    private int radioGainMb = 800; // +8 dB: the stream is quiet (about -25 LUFS, peaks -11 dBFS), so there is room
+
+    private void radioApplyBoost(int sid) {
+        try {
+            if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
+            if (sid == 0 || radioGainMb <= 0) return;
+            LoudnessEnhancer le = new LoudnessEnhancer(sid);
+            le.setTargetGain(radioGainMb);
+            le.setEnabled(true);
+            radioLe = le;
+        } catch (Throwable t) { radioLe = null; }
+    }
+
+    @PluginMethod
+    public void radioGain(final PluginCall call) {
+        final int g = call.getInt("gain", 0);
+        radioMain.post(new Runnable() { public void run() {
+            radioGainMb = Math.max(0, Math.min(1200, g));
+            if (radio != null) radioApplyBoost(radio.getAudioSessionId());
+            call.resolve();
+        } });
+    }
     private final Handler radioMain = new Handler(Looper.getMainLooper());
 
     private void radioReleaseNow() {
+        if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
         if (radio != null) {
             try { radio.stop(); } catch (Exception e) { }
             try { radio.release(); } catch (Exception e) { }
@@ -260,6 +285,7 @@ public class AdhanNotifierPlugin extends Plugin {
     public void radioStart(final PluginCall call) {
         final String url = call.getString("url", "");
         if (!url.startsWith("https://")) { call.reject("bad url"); return; }
+        radioGainMb = Math.max(0, Math.min(1200, call.getInt("gain", 800)));
         radioMain.post(new Runnable() {
             public void run() {
                 try {
@@ -279,6 +305,9 @@ public class AdhanNotifierPlugin extends Plugin {
                                 notifyListeners("radioPlaying", o);
                             }
                         }
+                        public void onAudioSessionIdChanged(int audioSessionId) {
+                            if (p == radio) radioApplyBoost(audioSessionId);
+                        }
                         public void onPlayerError(PlaybackException error) {
                             boolean mine = (p == radio);
                             if (mine) radioReleaseNow();
@@ -289,6 +318,7 @@ public class AdhanNotifierPlugin extends Plugin {
                     p.setMediaItem(MediaItem.fromUri(url));
                     p.setPlayWhenReady(true);
                     p.prepare();
+                    radioApplyBoost(p.getAudioSessionId());
                 } catch (Exception e) {
                     radioReleaseNow();
                     call.reject("radio failed");
