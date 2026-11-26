@@ -2,6 +2,8 @@ package __PKG__;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.audiofx.DynamicsProcessing;
+import android.media.audiofx.LoudnessEnhancer;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -246,9 +248,53 @@ public class AdhanNotifierPlugin extends Plugin {
 
     // ---------- Quran Radio (Cairo): official HLS stream, audio only (video track disabled), started only by the user ----------
     private ExoPlayer radio;
+    private LoudnessEnhancer radioLe;
+    private DynamicsProcessing radioDp;
+    private int radioGainMb = 900; // +9 dB with a peak limiter: the stream is quiet (about -24 LUFS, peaks -6.5 dBFS)
+
+    private void radioReleaseFx() {
+        if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
+        if (radioDp != null) { try { radioDp.release(); } catch (Throwable t) { } radioDp = null; }
+    }
+
+    private void radioApplyBoost(int sid) {
+        radioReleaseFx();
+        if (sid == 0 || radioGainMb <= 0) return;
+        // 1) gain with a peak limiter (Android 9+), so the louder signal does not clip
+        if (Build.VERSION.SDK_INT >= 28) {
+            try {
+                DynamicsProcessing.Config cfg = new DynamicsProcessing.Config.Builder(
+                    DynamicsProcessing.VARIANT_FAVOR_TIME_RESOLUTION, 2, false, 0, false, 0, false, 0, true).build();
+                DynamicsProcessing dp = new DynamicsProcessing(0, sid, cfg);
+                dp.setInputGainAllChannelsTo(radioGainMb / 100f);
+                dp.setLimiterAllChannelsTo(new DynamicsProcessing.Limiter(true, true, 0, 1f, 80f, 20f, -2f, 0f));
+                dp.setEnabled(true);
+                radioDp = dp;
+                return;
+            } catch (Throwable t) { radioDp = null; }
+        }
+        // 2) fallback: plain loudness enhancer, a smaller safe gain
+        try {
+            LoudnessEnhancer le = new LoudnessEnhancer(sid);
+            le.setTargetGain(Math.min(radioGainMb, 600));
+            le.setEnabled(true);
+            radioLe = le;
+        } catch (Throwable t) { radioLe = null; }
+    }
+
+    @PluginMethod
+    public void radioGain(final PluginCall call) {
+        final int g = call.getInt("gain", 0);
+        radioMain.post(new Runnable() { public void run() {
+            radioGainMb = Math.max(0, Math.min(1200, g));
+            if (radio != null) radioApplyBoost(radio.getAudioSessionId());
+            call.resolve();
+        } });
+    }
     private final Handler radioMain = new Handler(Looper.getMainLooper());
 
     private void radioReleaseNow() {
+        radioReleaseFx();
         if (radio != null) {
             try { radio.stop(); } catch (Exception e) { }
             try { radio.release(); } catch (Exception e) { }
@@ -260,6 +306,7 @@ public class AdhanNotifierPlugin extends Plugin {
     public void radioStart(final PluginCall call) {
         final String url = call.getString("url", "");
         if (!url.startsWith("https://")) { call.reject("bad url"); return; }
+        radioGainMb = Math.max(0, Math.min(1200, call.getInt("gain", 900)));
         radioMain.post(new Runnable() {
             public void run() {
                 try {
@@ -279,6 +326,9 @@ public class AdhanNotifierPlugin extends Plugin {
                                 notifyListeners("radioPlaying", o);
                             }
                         }
+                        public void onAudioSessionIdChanged(int audioSessionId) {
+                            if (p == radio) radioApplyBoost(audioSessionId);
+                        }
                         public void onPlayerError(PlaybackException error) {
                             boolean mine = (p == radio);
                             if (mine) radioReleaseNow();
@@ -289,6 +339,7 @@ public class AdhanNotifierPlugin extends Plugin {
                     p.setMediaItem(MediaItem.fromUri(url));
                     p.setPlayWhenReady(true);
                     p.prepare();
+                    radioApplyBoost(p.getAudioSessionId());
                 } catch (Exception e) {
                     radioReleaseNow();
                     call.reject("radio failed");
