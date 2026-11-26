@@ -26,6 +26,7 @@ jobs:
         run: |
           mkdir -p www
           python3 tools/apply_patch.py index.html tools/zad_r103.patch.json
+          python3 tools/apply_patch.py index.html tools/zad_r104.patch.json
           cp index.html www/
           cp -r adhan www/
           cp -r alarm www/
