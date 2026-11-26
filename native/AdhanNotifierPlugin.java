@@ -67,7 +67,8 @@ public class AdhanNotifierPlugin extends Plugin {
             File src = new File(getContext().getApplicationInfo().sourceDir);
             File dir = new File(getContext().getCacheDir(), "updates");
             if (!dir.exists() && !dir.mkdirs()) { call.reject("no cache dir"); return; }
-            File dst = new File(dir, "zaid-share.apk");
+            new File(dir, "zaid-share.apk").delete();
+            File dst = new File(dir, "\u0632\u064E\u0627\u062F\u064F \u0627\u0644\u0652\u0645\u064F\u0624\u0652\u0645\u0650\u0646\u0650.apk");
             InputStream in = new java.io.FileInputStream(src);
             FileOutputStream out = new FileOutputStream(dst);
             byte[] buf = new byte[65536];
