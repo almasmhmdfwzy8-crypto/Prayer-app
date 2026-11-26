@@ -6,7 +6,7 @@ These come from the user. They apply to every future build. Re-verify each one b
 ## Mushaf / المصحف
 1. Looks like the printed Madinah Mushaf: 15 lines per page, ayah markers, hizb/rub, juz, surah headers, sajdah, page number.
 2. Large font, page filled to the full width and height, no wide gaps. Side margin about 7 px. Quran text is never changed (line breaks come from the data).
-3. Short pages (1, 2, last pages): same font as normal pages, natural spacing, centred. Never inflated.
+3. Short pages (last pages): same font as normal pages, natural spacing, centred. Pages 1 and 2 (user note 1:42 AM, "make the text here bigger"): the largest font where the widest line fits in the safe margins (96% of the inner width), about 35 px at 360 wide; every line stays on one line, no marker overlap, no horizontal scroll.
 4. Header pills stay clear of the Android status bar (safe-area inset plus 40 px header).
 5. No marker (quarter/half/hizb badge, juz, sajdah, page badges) may overlap or hide any letter. Badges sit in the gap above a line or in the side margin, never over text. Check every page (rub-px.js: 0 overlaps on all 604 pages).
 6. Text size above 100% is capped in the printed mode.
@@ -22,7 +22,7 @@ These come from the user. They apply to every future build. Re-verify each one b
 12. The seek bar works on the full player and the mini player: tap and drag jump to that point and play from there. Needs a host that supports HTTP Range.
 
 ## Radio / الإذاعة
-13. Radio must be loud enough: volume at full in the player, plus a "تقوية الصوت" switch (+8 dB, on by default). The stream itself is quiet (about -25 LUFS).
+13. Radio must be loud enough: volume at full in the player, plus a "تقوية الصوت" switch (+9 dB with a peak limiter at -2 dB via DynamicsProcessing on Android 9+, fallback LoudnessEnhancer +6 dB; on by default). The stream itself is quiet (about -24 LUFS, peak -6.5 dBFS). Bench simulation: about -15.4 LUFS, peak -1.9 dBFS. Only the live Egyptian radio is used (user: "I want the live one"); no reciter stream option.
 14. Mushaf font: each page uses the largest font that fits the width (the user chose this, like his page 5 screenshot).
 
 ## Updates / التحديثات
