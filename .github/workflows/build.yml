@@ -28,6 +28,8 @@ jobs:
           cp index.html www/
           cp -r adhan www/
           cp -r alarm www/
+          cp -r tones www/
+          cp -r fonts www/
           sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
           grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
 
@@ -124,300 +126,11 @@ jobs:
           </vector>
           XML
 
-          cat > "$DIR/AdhanService.java" <<'JAVA'
-          package __PKG__;
+          cp native/AdhanService.java "$DIR/AdhanService.java"
+          cp native/SalawatReceiver.java "$DIR/SalawatReceiver.java"
+          cp native/AdhanReceiver.java "$DIR/AdhanReceiver.java"
 
-          import android.app.Notification;
-          import android.app.PendingIntent;
-          import android.graphics.BitmapFactory;
-          import android.app.NotificationChannel;
-          import android.app.NotificationManager;
-          import android.app.Service;
-          import android.content.Context;
-          import android.content.Intent;
-          import android.content.pm.ServiceInfo;
-          import android.os.Build;
-          import android.os.Handler;
-          import android.os.IBinder;
-          import android.os.Looper;
-              import android.speech.tts.TextToSpeech;
-              import java.util.Locale;
-          import androidx.core.app.NotificationCompat;
-          import android.os.SystemClock;
-          import android.widget.RemoteViews;
-
-          public class AdhanService extends Service {
-              private static final String CH = "prayer_bar";
-              private static final String CH_MIN = "prayer_min";
-              private static final int NID = 4242;
-              private TextToSpeech tts;
-              private boolean ttsReady = false;
-              private long lastSal = 0;
-
-              @Override
-              public void onCreate() {
-                  super.onCreate();
-                  lastSal = System.currentTimeMillis();
-                  tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
-                      @Override
-                      public void onInit(int status) {
-                          if (status == TextToSpeech.SUCCESS && tts != null) {
-                              tts.setLanguage(new Locale("ar"));
-                              ttsReady = true;
-                          }
-                      }
-                  });
-              }
-
-              private void checkSalawat() {
-                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("sal", "");
-                  if (raw == null || raw.isEmpty()) return;
-                  long now = System.currentTimeMillis();
-                  for (String item : raw.split(";")) {
-                      try {
-                          long at = Long.parseLong(item);
-                          if (at > lastSal && at <= now && now - at < 60000) {
-                              lastSal = at;
-                              if (ttsReady && tts != null) tts.speak("صل على النبي", TextToSpeech.QUEUE_FLUSH, null, "sal" + at);
-                              return;
-                          }
-                      } catch (NumberFormatException e) {
-                      }
-                  }
-              }
-              private final Handler handler = new Handler(Looper.getMainLooper());
-              private final Runnable ticker = new Runnable() {
-                  @Override
-                  public void run() {
-                      refresh();
-                      handler.postDelayed(this, 30000);
-                  }
-              };
-
-              @Override
-              public IBinder onBind(Intent intent) {
-                  return null;
-              }
-
-              @Override
-              public int onStartCommand(Intent intent, int flags, int startId) {
-                  NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                  if (Build.VERSION.SDK_INT >= 26) {
-                      nm.deleteNotificationChannel("prayer_status");
-                      nm.deleteNotificationChannel("prayer_next2");
-                      NotificationChannel ch = new NotificationChannel(CH, "الصلاة القادمة", NotificationManager.IMPORTANCE_LOW);
-                      ch.setShowBadge(false);
-                      ch.setSound(null, null);
-                      ch.enableVibration(false);
-                      nm.createNotificationChannel(ch);
-                      NotificationChannel chm = new NotificationChannel(CH_MIN, "الصلاة القادمة (مخفي)", NotificationManager.IMPORTANCE_MIN);
-                      chm.setShowBadge(false);
-                      chm.setSound(null, null);
-                      chm.enableVibration(false);
-                      nm.createNotificationChannel(chm);
-                  }
-                  Notification n = build();
-                  if (Build.VERSION.SDK_INT >= 34) {
-                      startForeground(NID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-                  } else {
-                      startForeground(NID, n);
-                  }
-                  handler.removeCallbacks(ticker);
-                  handler.post(ticker);
-                  return START_STICKY;
-              }
-
-              @Override
-              public void onDestroy() {
-                  handler.removeCallbacks(ticker);
-                  if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
-                  super.onDestroy();
-              }
-
-              private void refresh() {
-                  NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                  nm.notify(NID, build());
-                  checkSalawat();
-              }
-
-              private Object[] nextPrayer() {
-                  String raw = getSharedPreferences("adhan", MODE_PRIVATE).getString("times", "");
-                  if (raw == null || raw.isEmpty()) return null;
-                  long now = System.currentTimeMillis();
-                  long bestAt = Long.MAX_VALUE;
-                  String bestName = "";
-                  for (String item : raw.split(";")) {
-                      int bar = item.indexOf('|');
-                      if (bar < 0) continue;
-                      try {
-                          long at = Long.parseLong(item.substring(0, bar));
-                          if (at > now && at < bestAt) {
-                              bestAt = at;
-                              bestName = item.substring(bar + 1);
-                          }
-                      } catch (NumberFormatException e) {
-                      }
-                  }
-                  if (bestAt == Long.MAX_VALUE) return null;
-                  return new Object[] { bestName, bestAt };
-              }
-
-              private int colorOf(String c) {
-                  try {
-                      if (c != null && c.length() == 7 && c.charAt(0) == '#') return (int) (0xFF000000L | Long.parseLong(c.substring(1), 16));
-                  } catch (NumberFormatException e) {
-                  }
-                  return 0xFFF6C945;
-              }
-
-              private Notification build() {
-                  Object[] nx = nextPrayer();
-                  android.content.SharedPreferences sp = getSharedPreferences("adhan", MODE_PRIVATE);
-                  String style = sp.getString("nstyle", "full");
-                  String pos = sp.getString("npos", "bar");
-                  String color = sp.getString("ncolor", "");
-                  boolean full = !"short".equals(style);
-                  String title = "زاد المؤمن";
-                  String text = "افتح التطبيق عشان المواقيت تتحدّث";
-                  long at = 0;
-                  if (nx != null) {
-                      at = (Long) nx[1];
-                      long mins = Math.max(0, (at - System.currentTimeMillis()) / 60000L);
-                      long h = mins / 60L;
-                      long m = mins % 60L;
-                      if (full) {
-                          title = "الصلاة القادمة: " + nx[0];
-                          text = "متبقي " + (h > 0 ? h + " س " + m + " د" : m + " د");
-                      } else {
-                          title = String.valueOf(nx[0]);
-                          text = "الصلاة القادمة";
-                      }
-                  }
-                  NotificationCompat.Builder b = new NotificationCompat.Builder(this, "hidden".equals(pos) ? CH_MIN : CH)
-                          .setSmallIcon(R.drawable.ic_stat_prayer)
-                          .setColor(colorOf(color))
-                          .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_bg_art))
-                          .setContentTitle(title)
-                          .setContentText(text)
-                          .setOngoing(true)
-                          .setOnlyAlertOnce(true)
-                          .setSilent(true)
-                          .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                          .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                  if (color != null && color.length() == 7 && color.charAt(0) == '#') b.setColorized(true);
-                  if (nx != null && full && Build.VERSION.SDK_INT >= 24) {
-                      RemoteViews rv = new RemoteViews(getPackageName(), R.layout.pn_custom);
-                      rv.setTextViewText(R.id.pn_name, String.valueOf(nx[0]));
-                      rv.setChronometerCountDown(R.id.pn_time, true);
-                      rv.setChronometer(R.id.pn_time, SystemClock.elapsedRealtime() + (at - System.currentTimeMillis()), null, true);
-                      b.setCustomContentView(rv).setCustomBigContentView(rv);
-                      b.setShowWhen(false);
-                  } else {
-                      b.setShowWhen(false);
-                  }
-                  Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
-                  if (launch != null) {
-                      launch.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                      int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-                      if (Build.VERSION.SDK_INT >= 23) flags |= PendingIntent.FLAG_IMMUTABLE;
-                      b.setContentIntent(PendingIntent.getActivity(this, 0, launch, flags));
-                  }
-                  return b.build();
-              }
-          }
-          JAVA
-
-          cat > "$DIR/AdhanNotifierPlugin.java" <<'JAVA'
-          package __PKG__;
-
-          import android.content.Context;
-          import android.content.Intent;
-          import android.net.Uri;
-          import android.os.Build;
-          import android.provider.Settings;
-          import com.getcapacitor.Plugin;
-          import com.getcapacitor.PluginCall;
-          import com.getcapacitor.PluginMethod;
-          import com.getcapacitor.annotation.CapacitorPlugin;
-          import androidx.core.content.FileProvider;
-          import java.io.File;
-          import java.io.FileOutputStream;
-          import java.io.InputStream;
-          import java.net.HttpURLConnection;
-          import java.net.URL;
-
-          @CapacitorPlugin(name = "AdhanNotifier")
-          public class AdhanNotifierPlugin extends Plugin {
-
-              @PluginMethod
-              public void update(PluginCall call) {
-                  String times = call.getString("times", "");
-                  String sal = call.getString("sal", "");
-                  String nstyle = call.getString("style", "full");
-                  String npos = call.getString("pos", "bar");
-                  String ncolor = call.getString("color", "");
-                  getContext().getSharedPreferences("adhan", Context.MODE_PRIVATE).edit().putString("times", times).putString("sal", sal).putString("nstyle", nstyle).putString("npos", npos).putString("ncolor", ncolor).apply();
-                  Intent i = new Intent(getContext(), AdhanService.class);
-                  if (Build.VERSION.SDK_INT >= 26) {
-                      getContext().startForegroundService(i);
-                  } else {
-                      getContext().startService(i);
-                  }
-                  call.resolve();
-              }
-
-              @PluginMethod
-              public void stop(PluginCall call) {
-                  getContext().stopService(new Intent(getContext(), AdhanService.class));
-                  call.resolve();
-              }
-
-              @PluginMethod
-              public void openBattery(PluginCall call) {
-                  Intent i = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-                  i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                  getContext().startActivity(i);
-                  call.resolve();
-              }
-
-              @PluginMethod
-              public void openAppSettings(PluginCall call) {
-                  Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getContext().getPackageName()));
-                  i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                  getContext().startActivity(i);
-                  call.resolve();
-              }
-
-              @PluginMethod
-              public void installUpdate(PluginCall call) {
-                  String url = call.getString("url", "");
-                  new Thread(() -> {
-                      try {
-                          HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-                          c.setInstanceFollowRedirects(true);
-                          c.connect();
-                          File dir = new File(getContext().getCacheDir(), "updates");
-                          dir.mkdirs();
-                          File f = new File(dir, "update.apk");
-                          try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(f)) {
-                              byte[] buf = new byte[8192];
-                              int r;
-                              while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
-                          }
-                          c.disconnect();
-                          Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", f);
-                          Intent i = new Intent(Intent.ACTION_VIEW);
-                          i.setDataAndType(uri, "application/vnd.android.package-archive");
-                          i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                          getContext().startActivity(i);
-                          call.resolve();
-                      } catch (Exception e) {
-                          call.reject("update failed: " + e.getMessage());
-                      }
-                  }).start();
-              }
-          }
-          JAVA
+          cp native/AdhanNotifierPlugin.java "$DIR/AdhanNotifierPlugin.java"
 
           cat > "$DIR/FloatPlugin.java" <<'JAVA'
           package __PKG__;
@@ -592,37 +305,9 @@ jobs:
           }
           JAVA
 
-          cat > "$DIR/BootReceiver.java" <<'JAVA'
-          package __PKG__;
+          cp native/BootReceiver.java "$DIR/BootReceiver.java"
 
-          import android.app.AlarmManager;
-          import android.app.PendingIntent;
-          import android.content.BroadcastReceiver;
-          import android.content.Context;
-          import android.content.Intent;
-          import android.content.SharedPreferences;
-          import android.os.Build;
-          import android.provider.Settings;
-
-          public class BootReceiver extends BroadcastReceiver {
-
-              @Override
-              public void onReceive(Context ctx, Intent intent) {
-                  String action = intent.getAction();
-                  if (!"android.intent.action.BOOT_COMPLETED".equals(action)) return;
-                  SharedPreferences sp = ctx.getSharedPreferences("float", Context.MODE_PRIVATE);
-                  if (!sp.getBoolean("enabled", false)) return;
-                  if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(ctx)) return;
-                  int everyMin = sp.getInt("everyMin", 60);
-                  long interval = everyMin * 60000L;
-                  AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
-                  PendingIntent pi = PendingIntent.getBroadcast(ctx, 4401, new Intent(ctx, FloatReceiver.class), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                  am.setInexactRepeating(AlarmManager.RTC, System.currentTimeMillis() + interval, interval, pi);
-              }
-          }
-          JAVA
-
-          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
+          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/SalawatReceiver.java" "$DIR/AdhanReceiver.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
 
           # Write MainActivity ourselves: registers the plugin before the bridge starts
           cat > "$MAIN" <<'JAVA'
@@ -647,9 +332,9 @@ jobs:
           python3 - <<'PY'
           p = "android/app/src/main/AndroidManifest.xml"
           s = open(p, encoding="utf-8").read()
-          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
-          svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown" /></service>'
-          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
+          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /><uses-permission android:name="android.permission.WAKE_LOCK" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown, adhan and scheduled salawat reminder audio" /></service>'
+          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".SalawatReceiver" android:exported="false" /><receiver android:name=".AdhanReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
           if "AdhanService" not in s:
               assert "<application" in s and "</application>" in s, "manifest has no application tag"
               s = s.replace("<application", perms + "<application", 1)
@@ -667,52 +352,9 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <paths><cache-path name="updates" path="updates/" /></paths>
           XML
-          cat > $RES/layout/pn_custom.xml <<'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:orientation="horizontal"
-              android:gravity="center_vertical"
-              android:paddingStart="16dp"
-              android:paddingEnd="16dp"
-              android:paddingTop="12dp"
-              android:paddingBottom="12dp">
-              <ImageView
-                  android:layout_width="40dp"
-                  android:layout_height="40dp"
-                  android:src="@drawable/ic_launcher_bg_art"
-                  android:scaleType="centerInside" />
-              <LinearLayout
-                  android:layout_width="0dp"
-                  android:layout_height="wrap_content"
-                  android:layout_weight="1"
-                  android:orientation="vertical"
-                  android:paddingStart="12dp">
-                  <TextView
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="الصلاة القادمة"
-                      android:textColor="#FFFFFFFF"
-                      android:alpha="0.85"
-                      android:textSize="13sp" />
-                  <TextView
-                      android:id="@+id/pn_name"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:textColor="#FFFFFFFF"
-                      android:textStyle="bold"
-                      android:textSize="22sp" />
-              </LinearLayout>
-              <Chronometer
-                  android:id="@+id/pn_time"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:textColor="#FFFFFFFF"
-                  android:textStyle="bold"
-                  android:textSize="30sp" />
-          </LinearLayout>
-          XML
+          cp native/pn_custom.xml $RES/layout/pn_custom.xml
+          mkdir -p $RES/drawable
+          cp native/pn_bg.xml native/pn_frame_name.xml native/pn_frame_time.xml $RES/drawable/
           sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
           grep -n "versionCode" android/app/build.gradle
 
@@ -758,6 +400,16 @@ jobs:
             echo "debug signing forced to stable keystore"
           fi
 
+      - name: Add audio player library for the Quran radio
+        run: |
+          {
+            echo ''
+            echo 'dependencies {'
+            echo '    implementation "androidx.media3:media3-exoplayer:1.1.1"'
+            echo '    implementation "androidx.media3:media3-exoplayer-hls:1.1.1"'
+            echo '}'
+          } >> android/app/build.gradle
+
       - name: Build APK
         working-directory: android
         run: |
@@ -777,6 +429,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publish release for in-app updates
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: b${{ github.run_number }}
