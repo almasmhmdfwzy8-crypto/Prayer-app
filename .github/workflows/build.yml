@@ -25,11 +25,14 @@ jobs:
       - name: Prepare web folder
         run: |
           mkdir -p www
+          python3 tools/apply_patch.py index.html tools/zad_r103.patch.json
           cp index.html www/
           cp -r adhan www/
           cp -r alarm www/
           cp -r tones www/
           cp -r fonts www/
+          python3 tools/build_mushaf.py www/mushaf
+          test "$(ls www/mushaf | wc -l)" = 1210
           sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
           grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
 
