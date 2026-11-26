@@ -2,6 +2,7 @@ package __PKG__;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.audiofx.DynamicsProcessing;
 import android.media.audiofx.LoudnessEnhancer;
 import android.net.Uri;
 import android.os.Build;
@@ -248,14 +249,34 @@ public class AdhanNotifierPlugin extends Plugin {
     // ---------- Quran Radio (Cairo): official HLS stream, audio only (video track disabled), started only by the user ----------
     private ExoPlayer radio;
     private LoudnessEnhancer radioLe;
-    private int radioGainMb = 800; // +8 dB: the stream is quiet (about -25 LUFS, peaks -11 dBFS), so there is room
+    private DynamicsProcessing radioDp;
+    private int radioGainMb = 900; // +9 dB with a peak limiter: the stream is quiet (about -24 LUFS, peaks -6.5 dBFS)
+
+    private void radioReleaseFx() {
+        if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
+        if (radioDp != null) { try { radioDp.release(); } catch (Throwable t) { } radioDp = null; }
+    }
 
     private void radioApplyBoost(int sid) {
+        radioReleaseFx();
+        if (sid == 0 || radioGainMb <= 0) return;
+        // 1) gain with a peak limiter (Android 9+), so the louder signal does not clip
+        if (Build.VERSION.SDK_INT >= 28) {
+            try {
+                DynamicsProcessing.Config cfg = new DynamicsProcessing.Config.Builder(
+                    DynamicsProcessing.VARIANT_FAVOR_TIME_RESOLUTION, 2, false, 0, false, 0, false, 0, true).build();
+                DynamicsProcessing dp = new DynamicsProcessing(0, sid, cfg);
+                dp.setInputGainAllChannelsTo(radioGainMb / 100f);
+                dp.setLimiterAllChannelsTo(new DynamicsProcessing.Limiter(true, true, 0, 1f, 80f, 20f, -2f, 0f));
+                dp.setEnabled(true);
+                radioDp = dp;
+                return;
+            } catch (Throwable t) { radioDp = null; }
+        }
+        // 2) fallback: plain loudness enhancer, a smaller safe gain
         try {
-            if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
-            if (sid == 0 || radioGainMb <= 0) return;
             LoudnessEnhancer le = new LoudnessEnhancer(sid);
-            le.setTargetGain(radioGainMb);
+            le.setTargetGain(Math.min(radioGainMb, 600));
             le.setEnabled(true);
             radioLe = le;
         } catch (Throwable t) { radioLe = null; }
@@ -273,7 +294,7 @@ public class AdhanNotifierPlugin extends Plugin {
     private final Handler radioMain = new Handler(Looper.getMainLooper());
 
     private void radioReleaseNow() {
-        if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
+        radioReleaseFx();
         if (radio != null) {
             try { radio.stop(); } catch (Exception e) { }
             try { radio.release(); } catch (Exception e) { }
@@ -285,7 +306,7 @@ public class AdhanNotifierPlugin extends Plugin {
     public void radioStart(final PluginCall call) {
         final String url = call.getString("url", "");
         if (!url.startsWith("https://")) { call.reject("bad url"); return; }
-        radioGainMb = Math.max(0, Math.min(1200, call.getInt("gain", 800)));
+        radioGainMb = Math.max(0, Math.min(1200, call.getInt("gain", 900)));
         radioMain.post(new Runnable() {
             public void run() {
                 try {
