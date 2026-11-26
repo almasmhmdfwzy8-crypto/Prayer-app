@@ -1,0 +1,21 @@
+(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));const $=id=>document.getElementById(id);const log=[];
+window.Capacitor={Plugins:{App:{exitApp:()=>{window.__exited=(window.__exited||0)+1}}}};
+const st=window.__pod.state;const B=()=>window.__handleBack();
+const vv=()=>['prayer','pod','lib','settings','mushaf'].filter(n=>{const e=$('view-'+n);return e&&!e.hidden});
+window.__showView('pod');await sl(300);log.push(['pod home',vv().join(),st.screen]);
+st.screen='show';st.show={n:'x',rss:'x'};document.getElementById('podNP').hidden=false;
+B();log.push(['back1 closes NP',$('podNP').hidden,st.screen]);
+document.querySelector('.pd-card')&&document.querySelector('.pd-card').click();await sl(500);log.push(['opened show',st.screen]);
+document.querySelector('.pd-btn.g')&&0;
+B();await sl(300);log.push(['back2 -> home',st.screen,vv().join()]);
+st.q='abc';st.res=[];B();await sl(200);log.push(['back clears search',st.q,st.res]);
+window.__showView('settings');await sl(300);const b=document.querySelector('[data-sg-open]');b&&b.click();await sl(300);log.push(['settings group open sgMenu.hidden',$('sgMenu').hidden]);
+B();await sl(200);log.push(['back -> settings menu sgMenu.hidden',$('sgMenu').hidden,vv().join()]);
+window.__showView('lib');await sl(400);const hb=document.querySelector('#view-lib button, #view-lib .lib-card');log.push(['lib hub']);
+hb&&hb.click();await sl(300);log.push(['lib inner back btn',!!document.querySelector('.lib-back')]);
+B();await sl(200);log.push(['after back lib-back present',!!document.querySelector('.lib-back')]);
+window.__showView('mushaf');await sl(600);$('mqSheet').hidden=false;B();log.push(['mqSheet closed',$('mqSheet').hidden,vv().join()]);
+window.__exited=0;B();const t1=document.getElementById('appToast');log.push(['first root back toast',t1&&t1.textContent,t1&&t1.classList.contains('show'),window.__exited]);
+await sl(300);B();log.push(['second back exited',window.__exited]);
+await sl(2200);B();log.push(['3rd after 2.2s: toast again, exited still',window.__exited]);
+return JSON.stringify(log);})()
