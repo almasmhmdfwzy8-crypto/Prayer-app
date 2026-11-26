@@ -3670,7 +3670,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       store(d); render();
     });
     document.getElementById("fajrShare").addEventListener("click", function () {
-      var text = "انضم معايا لرجالة الفجر: 40 يوم نصلي الفجر في الجماعة. حمّل تطبيق زاد المؤمن: " + window.ZAID_DL;
+      var text = "انضم معايا لرجالة الفجر: 40 يوم نصلي الفجر في الجماعة. حمّل تطبيق زَادُ الْمُؤْمِنِ: " + window.ZAID_DL;
       if (navigator.share) { navigator.share({ title: "رجالة الفجر", text: text }).catch(function () {}); return; }
       try { navigator.clipboard.writeText(text).then(function () { showAppToast("اتنسخ نص الحملة"); }, function () { showAppToast("مقدرناش ننسخ النص"); }); }
       catch (e) { showAppToast("مقدرناش ننسخ النص"); }
@@ -6072,7 +6072,9 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     var APK_URL = "https://github.com/almasmhmdfwzy8-crypto/Prayer-app/releases/latest/download/app-debug.apk";
     var DRIVE_URL = "https://drive.google.com/file/d/1L7_klxYPToUdqtVI2QZQXc6EA8HSd433/view?usp=drivesdk";
     var MEDIAFIRE_URL = "https://www.mediafire.com/file/6ye1pfrn9sklly0/%D8%B2%D8%A7%D8%AF_%D8%A7%D9%84%D9%85%D8%A4%D9%85%D9%86.apk/file";
-    var TEXT = "تطبيق زاد المؤمن للصلاة والقرآن والأذكار، تحميل مجاني:";
+    var APP_NAME = "زَادُ الْمُؤْمِنِ";
+    var APK_NAME = APP_NAME + ".apk";
+    var TEXT = "تطبيق " + APP_NAME + " للصلاة والقرآن والأذكار، تحميل مجاني:";
     var LINKS = TEXT + "\n" + APK_URL + "\nأو من هنا: " + DRIVE_URL + "\n" + MEDIAFIRE_URL;
     function nativeFiles() {
       var C = window.Capacitor;
@@ -6081,7 +6083,7 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       return P.Filesystem && P.Share ? P : null;
     }
     function shareLinks() {
-      if (navigator.share) { navigator.share({ title: "زاد المؤمن", text: LINKS }).catch(function () {}); return; }
+      if (navigator.share) { navigator.share({ title: APP_NAME, text: LINKS }).catch(function () {}); return; }
       try {
         navigator.clipboard.writeText(LINKS).then(function () {
           showAppToast("اتنسخ رابط التحميل");
@@ -6095,20 +6097,20 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
       var AN = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdhanNotifier) || null;
       // Prefer the APK that is installed on this phone (same version he is using, works offline).
       // Old route (download the latest release) is used only when this build has no copy method.
-      var prep = (AN && AN.copyApk) ? AN.copyApk() : P.Filesystem.downloadFile({ url: APK_URL, path: "updates/zaid-share.apk", directory: "CACHE", recursive: true });
+      var prep = (AN && AN.copyApk) ? AN.copyApk() : P.Filesystem.downloadFile({ url: APK_URL, path: "updates/"+APK_NAME, directory: "CACHE", recursive: true });
       prep
         .then(function () {
-          return P.Filesystem.getUri({ path: "updates/zaid-share.apk", directory: "CACHE" });
+          return P.Filesystem.getUri({ path: "updates/"+APK_NAME, directory: "CACHE" });
         })
         .then(function (r) {
-          return P.Share.share({ title: "زاد المؤمن", text: (AN && AN.copyApk) ? TEXT : TEXT + "\n" + APK_URL, files: [r.uri], dialogTitle: "مشاركة التطبيق" });
+          return P.Share.share({ title: APP_NAME, text: (AN && AN.copyApk) ? TEXT : TEXT + "\n" + APK_URL, files: [r.uri], dialogTitle: "مشاركة التطبيق" });
         })
         .catch(function () {
           // file route failed (download, file provider or share sheet): share the download links as text instead
           try {
             var S = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share) || null;
             if (S) {
-              S.share({ title: "زاد المؤمن", text: LINKS, dialogTitle: "مشاركة التطبيق" }).catch(function () { showAppToast("مقدرناش نفتح المشاركة، جرب تاني"); });
+              S.share({ title: APP_NAME, text: LINKS, dialogTitle: "مشاركة التطبيق" }).catch(function () { showAppToast("مقدرناش نفتح المشاركة، جرب تاني"); });
               return;
             }
           } catch (e) {}
@@ -6413,13 +6415,13 @@ MUSHAF_DATA.S.forEach(function (x, i) { if (SURAH_TASHKEEL[i]) x.name = SURAH_TA
     if (P && P.Filesystem && P.Share) {
       P.Filesystem.writeFile({ path: "share/" + current.name, data: b64, directory: "CACHE", recursive: true })
         .then(function () { return P.Filesystem.getUri({ path: "share/" + current.name, directory: "CACHE" }); })
-        .then(function (r) { return P.Share.share({ title: "زاد المؤمن", text: window.zaidWithLink(""), files: [r.uri], dialogTitle: "مشاركة الصورة" }); })
+        .then(function (r) { return P.Share.share({ title: "زَادُ الْمُؤْمِنِ", text: window.zaidWithLink(""), files: [r.uri], dialogTitle: "مشاركة الصورة" }); })
         .catch(function () { $("shareMsg").textContent = "مقدرناش نشارك الصورة دلوقتي."; });
       return;
     }
     fetch(current.url).then(function (r) { return r.blob(); }).then(function (blob) {
       var f = new File([blob], current.name, { type: "image/png" });
-      if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: "زاد المؤمن", text: window.zaidWithLink("") });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: "زَادُ الْمُؤْمِنِ", text: window.zaidWithLink("") });
       var a = document.createElement("a"); a.href = current.url; a.download = current.name; document.body.appendChild(a); a.click(); a.remove();
     }).catch(function () { $("shareMsg").textContent = "مقدرناش نشارك الصورة دلوقتي."; });
   }
