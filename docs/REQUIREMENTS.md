@@ -35,3 +35,6 @@ These come from the user. They apply to every future build. Re-verify each one b
 - rub-px.js: no marker overlaps any word on all 604 pages.
 - back-px.js: back-button scenarios and double-back exit.
 - app.js: headless Chrome runner with real device metrics (360x768 at DPR 2).
+
+## Version / الإصدار
+16. (user note 2:00 AM, "why does the version stay 1") The build sets Android versionCode AND versionName from the CI run number, and Settings shows "الإصدار N" at the bottom. Check after each build: the APK's versionName equals the release tag number.
