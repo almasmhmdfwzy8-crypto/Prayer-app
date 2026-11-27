@@ -38,3 +38,9 @@ These come from the user. They apply to every future build. Re-verify each one b
 
 ## Version / الإصدار
 16. (user note 2:00 AM, "why does the version stay 1") The build sets Android versionCode AND versionName from the CI run number, and Settings shows "الإصدار N" at the bottom. Check after each build: the APK's versionName equals the release tag number.
+
+## Verse sheet / تفسير الآية (user, 2:26-2:28 AM)
+17. Tap any verse in the Mushaf: one bottom sheet opens by itself, nothing to choose. Order: the verse, المعنى المختصر (الميسر), تفسير السعدي, تفسير ابن كثير, مكان النزول, سبب النزول. The source is written under every part. Texts are shown unchanged from the sources (only the double-bracket footnote marks are hidden). If there is no authentic sabab, the sheet says so in one line.
+18. The sheet scrolls inside itself (touch-action pan-y), no horizontal scroll, no zoom, Back closes it (tests/td-px.js).
+19. Data: الميسر, Makki/Madani and sabab al-nuzul are packed into the APK at build time (tools/build_td.py, from the public sources, build fails if they are incomplete). السعدي and ابن كثير load per surah on first use and are cached on the phone.
+20. آية اليوم on Home: one full verse per Cairo day from a fixed list of 30 well-known verses, text taken from the Mushaf data; tapping the card opens the same sheet. PENDING sheikh review: the verse list, sabab wording/sources, Makki/Madani verse-level exceptions, an approved "aim" line for the daily verse, the unfiltered Ibn Kathir passages.
