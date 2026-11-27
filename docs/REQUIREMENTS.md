@@ -58,5 +58,10 @@ These come from the user. They apply to every future build. Re-verify each one b
 28. Image shares carry the same text as the text share.
 
 ## Home tiles and nav icons (user, 3:52-3:55 AM)
-29. Home shows 3 illustrated tiles (رجالة الفجر wide on top, يومك في زاد المؤمن and القرآن الكريم below), drawn as inline SVG (no extra download). No figure on the Fajr dome. Each tile still opens the same screen as before. The آية اليوم card is unchanged (checked byte-for-byte against the previous build). The أثر آية tile is NOT included until the user approves the feature.
+29. Home shows 4 illustrated tiles in a 2x2 grid (رجالة الفجر، يومك في زاد المؤمن، القرآن الكريم، أثر آية), drawn as inline SVG (no extra download). No figure on the Fajr dome. Each tile still opens the same screen as before. The آية اليوم card is unchanged (checked byte-for-byte against the previous build). (Update 8:15 AM: the user approved أثر آية, see item 31.)
 30. The bottom nav has colorful icons in the option-A style for all 6 tabs (الرئيسية، المصحف، الأذكار، المكتبة، المسبحة، الإعدادات); the selected tab has a gold ring. Tab names, order and behavior are unchanged.
+
+## أثر آية / private verse notes (user approved 8:15 AM)
+31. A 4th illustrated tile "أثر آية" opens a page "آثار القرآن". Notes are private: saved on the device only (local storage key athar-v1), never sent, never shared, no share button. The app writes no tafsir or religious text for it: only the user's words plus the verse text taken from the Mushaf data (the verse is stored as surah and ayah numbers, never copied).
+32. New note: pick the verse (آية اليوم, من آخر صفحة قرأتها, or any surah and ayah), pick one of 4 types (فهمت إيه، هطبّق إيه، أثّرت فيا إزاي، دعاء استلهمته منها), write text (required, up to 1000 characters), save. Notebook: grouped by date, filter by type, tap a note to edit, delete needs a second tap to confirm, empty state with one sentence. Back closes the sheet first, then leaves the page. Test: tests/athar.js.
+33. The آية اليوم card is untouched. Edit/delete, backup/export and sync are not included (export is not built, so uninstalling the app loses the notes).
