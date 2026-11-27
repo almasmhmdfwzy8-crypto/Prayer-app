@@ -34,6 +34,8 @@ jobs:
           cp -r fonts www/
           python3 tools/build_mushaf.py www/mushaf
           test "$(ls www/mushaf | wc -l)" = 1210
+          python3 tools/build_td.py www/td-data.json
+          test -s www/td-data.json
           sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
           grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
 
