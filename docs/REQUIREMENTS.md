@@ -56,3 +56,7 @@ These come from the user. They apply to every future build. Re-verify each one b
 26. Dhikr share: the dhikr, its count and its source. A benefit line appears ONLY if a hadith was verified with book and number (currently 2 entries: Bukhari 6405 / Muslim 2691 and Bukhari 3293 / Muslim 2691). No unverified benefit line is ever shown. PENDING sheikh review of these lines and of any additions.
 27. Fajr campaign share has no day count. Wird share with 0 pages read today shows a toast and does not share.
 28. Image shares carry the same text as the text share.
+
+## Home tiles and nav icons (user, 3:52-3:55 AM)
+29. Home shows 3 illustrated tiles (رجالة الفجر wide on top, يومك في زاد المؤمن and القرآن الكريم below), drawn as inline SVG (no extra download). No figure on the Fajr dome. Each tile still opens the same screen as before. The آية اليوم card is unchanged (checked byte-for-byte against the previous build). The أثر آية tile is NOT included until the user approves the feature.
+30. The bottom nav has colorful icons in the option-A style for all 6 tabs (الرئيسية، المصحف، الأذكار، المكتبة، المسبحة، الإعدادات); the selected tab has a gold ring. Tab names, order and behavior are unchanged.
