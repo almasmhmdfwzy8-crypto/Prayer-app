@@ -45,8 +45,14 @@ These come from the user. They apply to every future build. Re-verify each one b
 19. Data: الميسر, Makki/Madani and sabab al-nuzul are packed into the APK at build time (tools/build_td.py, from the public sources, build fails if they are incomplete). السعدي and ابن كثير load per surah on first use and are cached on the phone.
 20. آية اليوم on Home: one full verse per Cairo day from a fixed list of 30 well-known verses, text taken from the Mushaf data; tapping the card opens the same sheet. PENDING sheikh review: the verse list, sabab wording/sources, Makki/Madani verse-level exceptions, an approved "aim" line for the daily verse, the unfiltered Ibn Kathir passages.
 
-## أثر آية / آثار القرآن (user, 2:41 AM) - DESIGN ONLY, not built
-21. On the Home آية اليوم card only: a button "سجّل أثر الآية". The note screen offers 4 quick choices (فهمت إيه / هطبّق إيه / أثّرت فيا إزاي / دعاء استلهمته) plus free text. A page "آثار القرآن" lists all saved notes. Notes are private, stored on the device only, never published, no sharing button, no AI, no tafsir text written by us. Must survive app updates (same storage as other user data). Back closes the note screen. Not built or published until the user approves the design.
-
 ## Radio keeps playing in the background (user, 2:50 AM)
+(Item 21 was "أثر آية": out of the current build by the user at 2:55 AM, see docs/DESIGN_WORK.md: active design work, kept out of release builds. Number kept free.)
 22. Quran radio must keep playing when the app is closed (swiped from recents) or the screen is off, like a normal radio. A foreground media service (RadioService, type mediaPlayback) shows an ongoing notification "إذاعة القرآن الكريم · بث مباشر" with an "إيقاف" button; the stop button and the in-app button both stop the radio and remove the notification. The player is not released when the activity is destroyed. On reopening the app the radio button shows the real state (tests/radio-bg.js). CI fails if the manifest lacks the service or the FOREGROUND_SERVICE_MEDIA_PLAYBACK permission. NOT verifiable without a real phone: battery optimization (some makers kill background audio), lock screen behavior, Android 13+ notification permission denied, audio focus when the adhan plays.
+
+## Share buttons / المشاركة (user, 2:30-2:56 AM)
+23. Every content type has a share button: verse (in the verse sheet), hadith (reader), dhikr/dua/tasbih (text and image), Fajr campaign, seerah chapter, prayer times, daily wird, podcast episode. Check each after every build (tests/share.js; the podcast and hadith-reader paths are only checked as present, not executed).
+24. Every share = a short description + content quoted exactly from the app's own data + the app name and download link (frame line "من تطبيق زَادُ الْمُؤْمِنِ / تحميل التطبيق: <link>").
+25. Verse share: the verse plus a verbatim 1-2 sentence quote from التفسير الميسر with the source name. Never paraphrased.
+26. Dhikr share: the dhikr, its count and its source. A benefit line appears ONLY if a hadith was verified with book and number (currently 2 entries: Bukhari 6405 / Muslim 2691 and Bukhari 3293 / Muslim 2691). No unverified benefit line is ever shown. PENDING sheikh review of these lines and of any additions.
+27. Fajr campaign share has no day count. Wird share with 0 pages read today shows a toast and does not share.
+28. Image shares carry the same text as the text share.
