@@ -247,12 +247,33 @@ public class AdhanNotifierPlugin extends Plugin {
     }
 
     // ---------- Quran Radio (Cairo): official HLS stream, audio only (video track disabled), started only by the user ----------
-    private ExoPlayer radio;
-    private LoudnessEnhancer radioLe;
-    private DynamicsProcessing radioDp;
+    // static: the radio keeps playing (foreground service) after the activity and this plugin instance are gone
+    private static ExoPlayer radio;
+    private static LoudnessEnhancer radioLe;
+    private static DynamicsProcessing radioDp;
+    private static AdhanNotifierPlugin inst;
+    private static final Handler radioMainS = new Handler(Looper.getMainLooper());
+    @Override public void load() { super.load(); inst = this; }
+    private static void emit(String ev, com.getcapacitor.JSObject o) { try { if (inst != null) inst.notifyListeners(ev, o); } catch (Throwable t) { } }
+    static void radioStopFromService() { radioMainS.post(new Runnable() { public void run() { radioReleaseNow(false); emit("radioStopped", new com.getcapacitor.JSObject()); } }); }
+    private void radioService(boolean start) {
+        try {
+            Intent i = new Intent(getContext(), RadioService.class);
+            if (start) { if (Build.VERSION.SDK_INT >= 26) getContext().startForegroundService(i); else getContext().startService(i); }
+            else getContext().stopService(i);
+        } catch (Throwable t) { }
+    }
+    @PluginMethod
+    public void radioStatus(final PluginCall call) {
+        radioMain.post(new Runnable() { public void run() {
+            com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
+            o.put("playing", radio != null && radio.getPlayWhenReady());
+            call.resolve(o);
+        } });
+    }
     private int radioGainMb = 900; // +9 dB with a peak limiter: the stream is quiet (about -24 LUFS, peaks -6.5 dBFS)
 
-    private void radioReleaseFx() {
+    private static void radioReleaseFx() {
         if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
         if (radioDp != null) { try { radioDp.release(); } catch (Throwable t) { } radioDp = null; }
     }
@@ -293,13 +314,14 @@ public class AdhanNotifierPlugin extends Plugin {
     }
     private final Handler radioMain = new Handler(Looper.getMainLooper());
 
-    private void radioReleaseNow() {
+    private static void radioReleaseNow(boolean stopService) {
         radioReleaseFx();
         if (radio != null) {
             try { radio.stop(); } catch (Exception e) { }
             try { radio.release(); } catch (Exception e) { }
             radio = null;
         }
+        if (stopService && inst != null) inst.radioService(false);
     }
 
     @PluginMethod
@@ -310,7 +332,7 @@ public class AdhanNotifierPlugin extends Plugin {
         radioMain.post(new Runnable() {
             public void run() {
                 try {
-                    radioReleaseNow();
+                    radioReleaseNow(true);
                     final ExoPlayer p = new ExoPlayer.Builder(getContext()).build();
                     radio = p;
                     p.setTrackSelectionParameters(p.getTrackSelectionParameters().buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build());
@@ -323,7 +345,7 @@ public class AdhanNotifierPlugin extends Plugin {
                             if (done[0]) {
                                 com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
                                 o.put("playing", isPlaying);
-                                notifyListeners("radioPlaying", o);
+                                emit("radioPlaying", o);
                             }
                         }
                         public void onAudioSessionIdChanged(int audioSessionId) {
@@ -331,17 +353,18 @@ public class AdhanNotifierPlugin extends Plugin {
                         }
                         public void onPlayerError(PlaybackException error) {
                             boolean mine = (p == radio);
-                            if (mine) radioReleaseNow();
+                            if (mine) radioReleaseNow(true);
                             if (!done[0]) { done[0] = true; call.reject("stream error"); }
-                            else if (mine) notifyListeners("radioStopped", new com.getcapacitor.JSObject());
+                            else if (mine) emit("radioStopped", new com.getcapacitor.JSObject());
                         }
                     });
                     p.setMediaItem(MediaItem.fromUri(url));
                     p.setPlayWhenReady(true);
                     p.prepare();
                     radioApplyBoost(p.getAudioSessionId());
+                    radioService(true);
                 } catch (Exception e) {
-                    radioReleaseNow();
+                    radioReleaseNow(true);
                     call.reject("radio failed");
                 }
             }
@@ -350,12 +373,13 @@ public class AdhanNotifierPlugin extends Plugin {
 
     @PluginMethod
     public void radioStop(final PluginCall call) {
-        radioMain.post(new Runnable() { public void run() { radioReleaseNow(); call.resolve(); } });
+        radioMain.post(new Runnable() { public void run() { radioReleaseNow(true); call.resolve(); } });
     }
 
     @Override
     protected void handleOnDestroy() {
-        radioMain.post(new Runnable() { public void run() { radioReleaseNow(); } });
+        // do NOT stop the radio here: it keeps playing in the background service until the user stops it
+        if (inst == this) inst = null;
         super.handleOnDestroy();
     }
 }
