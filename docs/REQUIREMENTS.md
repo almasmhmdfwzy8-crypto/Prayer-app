@@ -56,3 +56,13 @@ These come from the user. They apply to every future build. Re-verify each one b
 26. Dhikr share: the dhikr, its count and its source. A benefit line appears ONLY if a hadith was verified with book and number (currently 2 entries: Bukhari 6405 / Muslim 2691 and Bukhari 3293 / Muslim 2691). No unverified benefit line is ever shown. PENDING sheikh review of these lines and of any additions.
 27. Fajr campaign share has no day count. Wird share with 0 pages read today shows a toast and does not share.
 28. Image shares carry the same text as the text share.
+
+## Home tiles and nav icons (user, 3:52-3:55 AM)
+29. Home shows 4 illustrated tiles in a 2x2 grid (رجالة الفجر، يومك في زاد المؤمن، القرآن الكريم، أثر آية), drawn as inline SVG (no extra download). No figure on the Fajr dome. Each tile still opens the same screen as before. The آية اليوم card is unchanged (checked byte-for-byte against the previous build). (Update 8:15 AM: the user approved أثر آية, see item 31.)
+30. The bottom nav has colorful icons in the option-A style for all 6 tabs (الرئيسية، المصحف، الأذكار، المكتبة، المسبحة، الإعدادات); the selected tab has a gold ring. Tab names, order and behavior are unchanged.
+
+## أثر آية / private verse notes (user approved 8:15 AM)
+31. A 4th illustrated tile "أثر آية" opens a page "آثار القرآن". Notes are private: saved on the device only (local storage key athar-v1), never uploaded. User request 08:35: each note has a share button (image in the same share frame as the other cards) showing the note text plus the verse reference only, as stored; no verse text, no tafsir, nothing invented. Test: tests/athar_share.js. Online sync is NOT built (user agreed it is later). The app writes no tafsir or religious text for it: only the user's words plus the verse text taken from the Mushaf data (the verse is stored as surah and ayah numbers, never copied).
+32. New note: pick the verse (آية اليوم, من آخر صفحة قرأتها, or any surah and ayah), pick one of 4 types (فهمت إيه، هطبّق إيه، أثّرت فيا إزاي، دعاء استلهمته منها), write text (required, up to 1000 characters), save. Notebook: grouped by date, filter by type, tap a note to edit, delete needs a second tap to confirm, empty state with one sentence. Back closes the sheet first, then leaves the page. Test: tests/athar.js.
+33. The آية اليوم card is untouched. Backup/export and sync are not included (export is not built, so uninstalling the app loses the notes).
+34. User request 08:36: home tiles are shorter (96px high, 2x2). Home page is about 100px longer than b83 (two rows instead of one). The user decided at 08:58 (relayed by the parent) to keep 2x2; a one-row variant was dropped. Athar Aya stays local only: no login, no sync, no accounts.

@@ -1,0 +1,28 @@
+(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));const o={};const $=s=>document.querySelector(s);
+localStorage.removeItem("athar-v1");
+$("#tileAthar").click();await w(400);
+o.viewShown=!$("#view-athar").hidden;o.title=document.getElementById("pageTitle").textContent;
+o.empty=!!$("#view-athar .at-empty");
+$("#view-athar .at-add").click();await w(300);
+o.sheetOpen=!$("#atSheet").hidden;o.verseShown=($("#atSheet .at-vt").textContent||"").length>10;o.dailyRef=$("#atSheet .at-vr").textContent;
+$("#atSheet .at-save").click();await w(200);o.emptyRefused=($("#atSheet").hidden===false)&&JSON.parse(localStorage.getItem("athar-v1")||"[]").length===0;
+localStorage.setItem("mushaf-v1",JSON.stringify({p:50,f:1,z:1,bm:[]}));
+[...document.querySelectorAll("#atSheet .at-src button")][1].click();await w(200);o.lastRef=$("#atSheet .at-vr").textContent;
+[...document.querySelectorAll("#atSheet .at-src button")][2].click();await w(100);
+const ss=$("#atSheet select");ss.value="40";ss.dispatchEvent(new Event("change"));await w(100);
+const vi=$("#atSheet input");vi.value="60";vi.dispatchEvent(new Event("change"));await w(200);o.pickRef=$("#atSheet .at-vr").textContent;o.pickText=$("#atSheet .at-vt").textContent.slice(0,30);
+[...document.querySelectorAll("#atSheet .at-ty")][1].click();
+$("#atSheet .at-ta").value="هدعي في كل سجدة";
+$("#atSheet .at-save").click();await w(300);
+const st=JSON.parse(localStorage.getItem("athar-v1")||"[]");o.saved=st.length===1&&st[0].s===40&&st[0].v===60&&st[0].t==="a"&&st[0].x==="هدعي في كل سجدة";o.noQuranStored=!JSON.stringify(st).includes("ادعوني");
+o.listCards=document.querySelectorAll("#view-athar .at-note").length;o.sheetClosed=$("#atSheet").hidden;
+$("#view-athar .at-note").click();await w(300);o.editHasDelete=!!$("#atSheet .at-del");o.editText=$("#atSheet .at-ta").value;
+window.__handleBack();await w(200);o.backClosedSheet=$("#atSheet").hidden&&!$("#view-athar").hidden;
+window.__handleBack();await w(300);o.backLeft=$("#view-athar").hidden;
+$("#tileAthar").click();await w(300);$("#view-athar .at-note").click();await w(200);$("#atSheet .at-ta").value="نص جديد";$("#atSheet .at-save").click();await w(200);
+o.edited=JSON.parse(localStorage.getItem("athar-v1"))[0].x==="نص جديد";
+const chips=[...document.querySelectorAll("#view-athar .at-chip")];chips[3].click();await w(150);o.filterNone=!!$("#view-athar .at-none");chips[0].click();
+$("#view-athar .at-note").click();await w(200);$("#atSheet .at-del").click();await w(100);o.stillThere=JSON.parse(localStorage.getItem("athar-v1")).length===1;$("#atSheet .at-del").click();await w(300);
+o.deleted=JSON.parse(localStorage.getItem("athar-v1")).length===0;o.emptyAgain=!!$("#view-athar .at-empty");
+o.hscroll=document.documentElement.scrollWidth<=window.innerWidth;
+return o})()
