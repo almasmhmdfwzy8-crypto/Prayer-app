@@ -34,6 +34,8 @@ jobs:
           cp -r fonts www/
           python3 tools/build_mushaf.py www/mushaf
           test "$(ls www/mushaf | wc -l)" = 1210
+          python3 tools/build_td.py www/td-data.json
+          test -s www/td-data.json
           sed -i "s/var APP_BUILD = 0;/var APP_BUILD = ${GITHUB_RUN_NUMBER};/" www/index.html
           grep -c "var APP_BUILD = ${GITHUB_RUN_NUMBER};" www/index.html
 
@@ -135,6 +137,7 @@ jobs:
           cp native/AdhanReceiver.java "$DIR/AdhanReceiver.java"
 
           cp native/AdhanNotifierPlugin.java "$DIR/AdhanNotifierPlugin.java"
+          cp native/RadioService.java "$DIR/RadioService.java"
 
           cat > "$DIR/FloatPlugin.java" <<'JAVA'
           package __PKG__;
@@ -311,7 +314,7 @@ jobs:
 
           cp native/BootReceiver.java "$DIR/BootReceiver.java"
 
-          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/SalawatReceiver.java" "$DIR/AdhanReceiver.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
+          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/SalawatReceiver.java" "$DIR/AdhanReceiver.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/RadioService.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
 
           # Write MainActivity ourselves: registers the plugin before the bridge starts
           cat > "$MAIN" <<'JAVA'
@@ -336,16 +339,18 @@ jobs:
           python3 - <<'PY'
           p = "android/app/src/main/AndroidManifest.xml"
           s = open(p, encoding="utf-8").read()
-          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /><uses-permission android:name="android.permission.WAKE_LOCK" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /><uses-permission android:name="android.permission.WAKE_LOCK" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          rsv = '<service android:name=".RadioService" android:exported="false" android:foregroundServiceType="mediaPlayback" />'
           svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown, adhan and scheduled salawat reminder audio" /></service>'
           rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".SalawatReceiver" android:exported="false" /><receiver android:name=".AdhanReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
           if "AdhanService" not in s:
               assert "<application" in s and "</application>" in s, "manifest has no application tag"
               s = s.replace("<application", perms + "<application", 1)
-              s = s.replace("</application>", svc + rcv + "</application>", 1)
+              s = s.replace("</application>", svc + rsv + rcv + "</application>", 1)
               open(p, "w", encoding="utf-8").write(s)
           print("AdhanService in manifest:", "AdhanService" in s)
           PY
+          grep -q "RadioService" android/app/src/main/AndroidManifest.xml && grep -q "FOREGROUND_SERVICE_MEDIA_PLAYBACK" android/app/src/main/AndroidManifest.xml
           echo "Native setup done"
 
       - name: Support files for in-app updates
@@ -360,7 +365,8 @@ jobs:
           mkdir -p $RES/drawable
           cp native/pn_bg.xml native/pn_frame_name.xml native/pn_frame_time.xml $RES/drawable/
           sed -i "s/versionCode [0-9]*/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
-          grep -n "versionCode" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${GITHUB_RUN_NUMBER}\"/" android/app/build.gradle
+          grep -n "version" android/app/build.gradle
 
       - name: Copy adhan sounds for notifications
         run: |
