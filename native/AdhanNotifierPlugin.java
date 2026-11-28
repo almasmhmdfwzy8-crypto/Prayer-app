@@ -1,11 +1,13 @@
 package __PKG__;
 
+import android.app.AlarmManager;
 import android.content.Context;
 import android.content.Intent;
 import android.media.audiofx.DynamicsProcessing;
 import android.media.audiofx.LoudnessEnhancer;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Base64;
 import android.os.Handler;
@@ -24,6 +26,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.net.URL;
 
 @CapacitorPlugin(name = "AdhanNotifier")
@@ -199,6 +203,85 @@ public class AdhanNotifierPlugin extends Plugin {
             // app not allowed to start the service right now: nothing to stop in that case
         }
         call.resolve();
+    }
+
+
+    // ---------- Adhkar / qiyam / Fajr alarm: scheduled and played natively ----------
+
+    /** The page sends its reminders; the service owns the alarms and plays the sounds itself. */
+    @PluginMethod
+    public void setReminders(PluginCall call) {
+        String json = call.getString("items", "[]");
+        try {
+            JSONArray a = new JSONArray(json);
+            if (a.length() > 40) { call.reject("too many"); return; }
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.getJSONObject(i);
+                int h = o.optInt("h", -1), m = o.optInt("m", -1);
+                if (h < 0 || h > 23 || m < 0 || m > 59) { call.reject("bad time"); return; }
+            }
+        } catch (Exception e) {
+            call.reject("bad list");
+            return;
+        }
+        ReminderService.store(getContext(), json);
+        ReminderService.makeChannels(getContext());
+        ReminderService.scheduleAll(getContext());
+        call.resolve();
+    }
+
+    /** Stops the Fajr alarm sound once he has answered. */
+    @PluginMethod
+    public void stopReminder(PluginCall call) {
+        ReminderService.stop(getContext());
+        call.resolve();
+    }
+
+    /** Settings: play one reminder sound now, without touching the schedule. */
+    @PluginMethod
+    public void testReminder(PluginCall call) {
+        String kind = call.getString("kind", "morning");
+        String title = call.getString("title", "تجربة الصوت");
+        String body = call.getString("body", "");
+        ReminderService.makeChannels(getContext());
+        ReminderService.playNow(getContext(), kind, title, body);
+        call.resolve();
+    }
+
+    /** Settings: open the "Alarms & reminders" screen (Android 12+). */
+    @PluginMethod
+    public void openExactAlarms(PluginCall call) {
+        try {
+            if (Build.VERSION.SDK_INT >= 31) {
+                Intent i = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:" + getContext().getPackageName()));
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(i);
+            }
+        } catch (Exception e) { }
+        call.resolve();
+    }
+
+    /** Settings: one call that tells the page what is allowed right now. */
+    @PluginMethod
+    public void reminderState(PluginCall call) {
+        com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
+        boolean exact = true;
+        try {
+            if (Build.VERSION.SDK_INT >= 31) {
+                AlarmManager am = (AlarmManager) getContext().getSystemService(Context.ALARM_SERVICE);
+                exact = am != null && am.canScheduleExactAlarms();
+            }
+        } catch (Exception e) { }
+        o.put("exact", exact);
+        o.put("sdk", Build.VERSION.SDK_INT);
+        try {
+            o.put("notif", androidx.core.app.NotificationManagerCompat.from(getContext()).areNotificationsEnabled());
+        } catch (Exception e) { o.put("notif", true); }
+        try {
+            PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+            o.put("battery", pm != null && pm.isIgnoringBatteryOptimizations(getContext().getPackageName()));
+        } catch (Exception e) { o.put("battery", false); }
+        call.resolve(o);
     }
 
     @PluginMethod
