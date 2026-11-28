@@ -168,7 +168,7 @@ public class RadioService extends Service {
             p.setTrackSelectionParameters(p.getTrackSelectionParameters().buildUpon()
                     .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build());
             p.setWakeMode(C.WAKE_MODE_NETWORK);
-            p.setAudioAttributes(new AudioAttributes.Builder()
+            p.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build(), true);
@@ -216,7 +216,7 @@ public class RadioService extends Service {
         }
     }
 
-    private void releaseAll() {
+    private static void releaseAll() {
         releasePlayerOnly();
         currentUrl = "";
     }
