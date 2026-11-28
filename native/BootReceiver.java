@@ -23,9 +23,13 @@ public class BootReceiver extends BroadcastReceiver {
         boolean boot = "android.intent.action.BOOT_COMPLETED".equals(action);
         boolean updated = "android.intent.action.MY_PACKAGE_REPLACED".equals(action);
         boolean clock = "android.intent.action.TIME_SET".equals(action) || "android.intent.action.TIMEZONE_CHANGED".equals(action);
-        if (!boot && !updated && !clock) return;
+        boolean exactGranted = "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED".equals(action);
+        if (!boot && !updated && !clock && !exactGranted) return;
 
         if (boot) restoreFloat(ctx);
+
+        // adhkar / qiyam / Fajr alarm: every alarm is re-armed from the stored daily times
+        try { ReminderService.makeChannels(ctx); ReminderService.scheduleAll(ctx); } catch (Exception e) { }
 
         SharedPreferences ap = ctx.getSharedPreferences("adhan", Context.MODE_PRIVATE);
         // Only when the app already configured the persistent notification or salawat once.
