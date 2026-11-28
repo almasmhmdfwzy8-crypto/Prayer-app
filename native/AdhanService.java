@@ -285,7 +285,13 @@ public class AdhanService extends Service {
         // Needs no exact-alarm permission on Android 12+. The system shows a next-alarm icon; that is the accepted trade-off.
         Intent showIn = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
         PendingIntent show = showIn == null ? null : PendingIntent.getActivity(ctx, 2, showIn, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
-        am.setAlarmClock(new AlarmManager.AlarmClockInfo(nx[1], show), pi);
+        try {
+            if (Build.VERSION.SDK_INT >= 31 && !am.canScheduleExactAlarms()) throw new SecurityException("no exact alarms");
+            am.setAlarmClock(new AlarmManager.AlarmClockInfo(nx[1], show), pi);
+        } catch (Exception e) {
+            // no "Alarms & reminders" access (Android 12+, fresh installs): still arm, never crash the service
+            try { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nx[1], pi); } catch (Exception e2) { }
+        }
     }
 
     /** Used only when the service cannot be started (system refused a background start): still tell the user, with the system default notification sound. */
@@ -354,7 +360,7 @@ public class AdhanService extends Service {
         stopPlayback();
         if (audio == null) return;
         AudioAttributes attrs = new AudioAttributes.Builder()
-                .setUsage(isAdhan ? AudioAttributes.USAGE_NOTIFICATION : AudioAttributes.USAGE_MEDIA)
+                .setUsage(isAdhan ? AudioAttributes.USAGE_ALARM : AudioAttributes.USAGE_MEDIA)
                 .setContentType(isAdhan ? AudioAttributes.CONTENT_TYPE_SONIFICATION : AudioAttributes.CONTENT_TYPE_SPEECH)
                 .build();
         int focusType = isAdhan ? AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE : AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK;
