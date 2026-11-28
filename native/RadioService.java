@@ -141,8 +141,8 @@ public class RadioService extends Service {
             sp.edit().putString(PREF_URL, url).putInt(PREF_GAIN, gainMb).apply();
         } catch (Throwable t) { }
 
-        startForegroundNow();
         play(url);
+        startForegroundNow();
         return START_STICKY;
     }
 
@@ -171,12 +171,13 @@ public class RadioService extends Service {
             p.setAudioAttributes(new androidx.media3.common.AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build(), true);
+                    .build(), false);
             p.addListener(new Player.Listener() {
                 @Override public void onIsPlayingChanged(boolean isPlaying) {
                     if (p != player) return;
                     updateNotification();
-                    AdhanNotifierPlugin.radioEvent(isPlaying ? "playing" : "paused", isPlaying);
+                    if (isPlaying) AdhanNotifierPlugin.radioEvent("playing", true);
+                    else if (!p.getPlayWhenReady()) AdhanNotifierPlugin.radioEvent("paused", false);
                 }
                 @Override public void onAudioSessionIdChanged(int audioSessionId) {
                     if (p == player) applyBoost(audioSessionId);
