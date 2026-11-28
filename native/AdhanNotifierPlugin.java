@@ -329,139 +329,75 @@ public class AdhanNotifierPlugin extends Plugin {
         }).start();
     }
 
-    // ---------- Quran Radio (Cairo): official HLS stream, audio only (video track disabled), started only by the user ----------
-    // static: the radio keeps playing (foreground service) after the activity and this plugin instance are gone
-    private static ExoPlayer radio;
-    private static LoudnessEnhancer radioLe;
-    private static DynamicsProcessing radioDp;
+    // ---------- Quran Radio (Cairo): the player lives in RadioService ----------
+    // The stream is owned by RadioService (media-playback foreground service, START_STICKY) so it keeps
+    // playing after the app is closed or the task is swiped away. This plugin only forwards commands.
     private static AdhanNotifierPlugin inst;
-    private static final Handler radioMainS = new Handler(Looper.getMainLooper());
+
     @Override public void load() { super.load(); inst = this; }
-    private static void emit(String ev, com.getcapacitor.JSObject o) { try { if (inst != null) inst.notifyListeners(ev, o); } catch (Throwable t) { } }
-    static void radioStopFromService() { radioMainS.post(new Runnable() { public void run() { radioReleaseNow(false); emit("radioStopped", new com.getcapacitor.JSObject()); } }); }
-    private void radioService(boolean start) {
+
+    static void radioEvent(String kind, boolean playing) {
         try {
-            Intent i = new Intent(getContext(), RadioService.class);
-            if (start) { if (Build.VERSION.SDK_INT >= 26) getContext().startForegroundService(i); else getContext().startService(i); }
-            else getContext().stopService(i);
+            if (inst == null) return;
+            com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
+            o.put("playing", playing);
+            String ev = "stopped".equals(kind) ? "radioStopped" : ("paused".equals(kind) ? "radioPaused" : "radioPlaying");
+            inst.notifyListeners(ev, o);
         } catch (Throwable t) { }
     }
+
     @PluginMethod
     public void radioStatus(final PluginCall call) {
-        radioMain.post(new Runnable() { public void run() {
-            com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
-            o.put("playing", radio != null && radio.getPlayWhenReady());
-            call.resolve(o);
-        } });
-    }
-    private int radioGainMb = 900; // +9 dB with a peak limiter: the stream is quiet (about -24 LUFS, peaks -6.5 dBFS)
-
-    private static void radioReleaseFx() {
-        if (radioLe != null) { try { radioLe.release(); } catch (Throwable t) { } radioLe = null; }
-        if (radioDp != null) { try { radioDp.release(); } catch (Throwable t) { } radioDp = null; }
-    }
-
-    private void radioApplyBoost(int sid) {
-        radioReleaseFx();
-        if (sid == 0 || radioGainMb <= 0) return;
-        // 1) gain with a peak limiter (Android 9+), so the louder signal does not clip
-        if (Build.VERSION.SDK_INT >= 28) {
-            try {
-                DynamicsProcessing.Config cfg = new DynamicsProcessing.Config.Builder(
-                    DynamicsProcessing.VARIANT_FAVOR_TIME_RESOLUTION, 2, false, 0, false, 0, false, 0, true).build();
-                DynamicsProcessing dp = new DynamicsProcessing(0, sid, cfg);
-                dp.setInputGainAllChannelsTo(radioGainMb / 100f);
-                dp.setLimiterAllChannelsTo(new DynamicsProcessing.Limiter(true, true, 0, 1f, 80f, 20f, -2f, 0f));
-                dp.setEnabled(true);
-                radioDp = dp;
-                return;
-            } catch (Throwable t) { radioDp = null; }
-        }
-        // 2) fallback: plain loudness enhancer, a smaller safe gain
-        try {
-            LoudnessEnhancer le = new LoudnessEnhancer(sid);
-            le.setTargetGain(Math.min(radioGainMb, 600));
-            le.setEnabled(true);
-            radioLe = le;
-        } catch (Throwable t) { radioLe = null; }
-    }
-
-    @PluginMethod
-    public void radioGain(final PluginCall call) {
-        final int g = call.getInt("gain", 0);
-        radioMain.post(new Runnable() { public void run() {
-            radioGainMb = Math.max(0, Math.min(1200, g));
-            if (radio != null) radioApplyBoost(radio.getAudioSessionId());
-            call.resolve();
-        } });
-    }
-    private final Handler radioMain = new Handler(Looper.getMainLooper());
-
-    private static void radioReleaseNow(boolean stopService) {
-        radioReleaseFx();
-        if (radio != null) {
-            try { radio.stop(); } catch (Exception e) { }
-            try { radio.release(); } catch (Exception e) { }
-            radio = null;
-        }
-        if (stopService && inst != null) inst.radioService(false);
+        com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
+        o.put("playing", RadioService.isPlaying());
+        call.resolve(o);
     }
 
     @PluginMethod
     public void radioStart(final PluginCall call) {
         final String url = call.getString("url", "");
-        if (!url.startsWith("https://")) { call.reject("bad url"); return; }
-        radioGainMb = Math.max(0, Math.min(1200, call.getInt("gain", 900)));
-        radioMain.post(new Runnable() {
-            public void run() {
-                try {
-                    radioReleaseNow(true);
-                    final ExoPlayer p = new ExoPlayer.Builder(getContext()).build();
-                    radio = p;
-                    p.setTrackSelectionParameters(p.getTrackSelectionParameters().buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build());
-                    p.setWakeMode(C.WAKE_MODE_NETWORK);
-                    final boolean[] done = new boolean[1];
-                    p.addListener(new Player.Listener() {
-                        public void onIsPlayingChanged(boolean isPlaying) {
-                            if (p != radio) return;
-                            if (isPlaying && !done[0]) { done[0] = true; call.resolve(); return; }
-                            if (done[0]) {
-                                com.getcapacitor.JSObject o = new com.getcapacitor.JSObject();
-                                o.put("playing", isPlaying);
-                                emit("radioPlaying", o);
-                            }
-                        }
-                        public void onAudioSessionIdChanged(int audioSessionId) {
-                            if (p == radio) radioApplyBoost(audioSessionId);
-                        }
-                        public void onPlayerError(PlaybackException error) {
-                            boolean mine = (p == radio);
-                            if (mine) radioReleaseNow(true);
-                            if (!done[0]) { done[0] = true; call.reject("stream error"); }
-                            else if (mine) emit("radioStopped", new com.getcapacitor.JSObject());
-                        }
-                    });
-                    p.setMediaItem(MediaItem.fromUri(url));
-                    p.setPlayWhenReady(true);
-                    p.prepare();
-                    radioApplyBoost(p.getAudioSessionId());
-                    radioService(true);
-                } catch (Exception e) {
-                    radioReleaseNow(true);
-                    call.reject("radio failed");
-                }
-            }
-        });
+        if (url == null || !url.startsWith("https://")) { call.reject("bad url"); return; }
+        try {
+            RadioService.start(getContext(), url, call.getInt("gain", 900));
+            call.resolve();
+        } catch (Throwable t) {
+            call.reject("radio failed");
+        }
     }
 
     @PluginMethod
     public void radioStop(final PluginCall call) {
-        radioMain.post(new Runnable() { public void run() { radioReleaseNow(true); call.resolve(); } });
+        try { RadioService.stop(getContext()); } catch (Throwable t) { }
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void radioGain(final PluginCall call) {
+        RadioService.setGain(call.getInt("gain", 0));
+        call.resolve();
+    }
+
+    /** Opens the battery-optimisation screen so the phone stops killing background playback. */
+    @PluginMethod
+    public void batterySettings(final PluginCall call) {
+        try {
+            Intent i;
+            if (Build.VERSION.SDK_INT >= 23) {
+                i = new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+            } else {
+                i = new Intent(android.provider.Settings.ACTION_SETTINGS);
+            }
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(i);
+            call.resolve();
+        } catch (Throwable t) {
+            call.reject("cannot open settings");
+        }
     }
 
     @Override
     protected void handleOnDestroy() {
-        // do NOT stop the radio here: it keeps playing in the background service until the user stops it
+        // do NOT stop the radio here: RadioService owns the player and keeps it running
         if (inst == this) inst = null;
         super.handleOnDestroy();
     }
