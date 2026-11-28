@@ -27,6 +27,7 @@ jobs:
           mkdir -p www
           python3 tools/apply_patch.py index.html tools/zad_r103.patch.json
           python3 tools/apply_patch.py index.html tools/zad_r104.patch.json
+          python3 tools/apply_patch.py index.html tools/zad_r105.patch.json
           cp index.html www/
           cp -r adhan www/
           cp -r alarm www/
@@ -313,8 +314,10 @@ jobs:
           JAVA
 
           cp native/BootReceiver.java "$DIR/BootReceiver.java"
+          cp native/ReminderService.java "$DIR/ReminderService.java"
+          cp native/ReminderReceiver.java "$DIR/ReminderReceiver.java"
 
-          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/SalawatReceiver.java" "$DIR/AdhanReceiver.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/RadioService.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java"
+          sed -i "s/__PKG__/$PKG/g" "$DIR/AdhanService.java" "$DIR/SalawatReceiver.java" "$DIR/AdhanReceiver.java" "$DIR/AdhanNotifierPlugin.java" "$DIR/RadioService.java" "$DIR/FloatPlugin.java" "$DIR/FloatReceiver.java" "$DIR/BootReceiver.java" "$DIR/ReminderService.java" "$DIR/ReminderReceiver.java"
 
           # Write MainActivity ourselves: registers the plugin before the bridge starts
           cat > "$MAIN" <<'JAVA'
@@ -339,14 +342,15 @@ jobs:
           python3 - <<'PY'
           p = "android/app/src/main/AndroidManifest.xml"
           s = open(p, encoding="utf-8").read()
-          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /><uses-permission android:name="android.permission.WAKE_LOCK" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          perms = '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" /><uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" /><uses-permission android:name="android.permission.POST_NOTIFICATIONS" /><uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /><uses-permission android:name="android.permission.VIBRATE" /><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /><uses-permission android:name="android.permission.USE_EXACT_ALARM" /><uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" /><uses-permission android:name="android.permission.WAKE_LOCK" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          rms = '<service android:name=".ReminderService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="plays the adhkar, qiyam and Fajr alarm sounds at their scheduled time" /></service><receiver android:name=".ReminderReceiver" android:exported="false" />'
           rsv = '<service android:name=".RadioService" android:exported="false" android:foregroundServiceType="mediaPlayback" />'
           svc = '<service android:name=".AdhanService" android:exported="false" android:foregroundServiceType="specialUse"><property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="prayer times countdown, adhan and scheduled salawat reminder audio" /></service>'
-          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".SalawatReceiver" android:exported="false" /><receiver android:name=".AdhanReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
+          rcv = '<receiver android:name=".FloatReceiver" android:exported="false" /><receiver android:name=".SalawatReceiver" android:exported="false" /><receiver android:name=".AdhanReceiver" android:exported="false" /><receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /><action android:name="android.intent.action.MY_PACKAGE_REPLACED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /><action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" /></intent-filter></receiver><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" /></provider>'
           if "AdhanService" not in s:
               assert "<application" in s and "</application>" in s, "manifest has no application tag"
               s = s.replace("<application", perms + "<application", 1)
-              s = s.replace("</application>", svc + rsv + rcv + "</application>", 1)
+              s = s.replace("</application>", svc + rms + rsv + rcv + "</application>", 1)
               open(p, "w", encoding="utf-8").write(s)
           print("AdhanService in manifest:", "AdhanService" in s)
           PY
